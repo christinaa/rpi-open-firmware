@@ -1,5 +1,5 @@
 # Minimal Raspberry Pi VPU firmware
-This is a small firmware for RPi VPU (VideoCore4) versions 1/2/3 that is capable of initializing UART, VPU PLL (PLLC) and ARM itself. It's intended to be used instead of stock `bootcode.bin` on RPi's SD card. You **need** to have UART to see anything meaningful as far as output goes.
+This is a small firmware for RPi VPU (VideoCore4) versions 1/2/3 that is capable of initializing VPU PLL (PLLC), UART, SDRAM and ARM itself. It's intended to be used instead of stock `bootcode.bin` on RPi's SD card. You **need** to have UART to see anything meaningful as far as output goes.
 
 This has been tested on RPi1 Model B (Hynix PoP DDR), RPi 2 Model B and RPi 3 Model B (both Elpida DDR). 
 
@@ -31,6 +31,7 @@ Eventually maybe. Since `start.elf` is responsible for clock and power managemen
 ## Thanks To
  * **Herman Hermitage** for his VC4 documentation and for helping me with working out suitable ARM PLL configurations.
  * **Julian Brown** for reviewing my code and for his awesome VC4 toolchain.
+ * **David Given** for his initial LLVM project which I used as the base for my LLVM toolchain before moving to GCC.
  * **phire** for reviewing my code.
  * **Broadcom** for their header release.
  * Various other people not mentioned here.
