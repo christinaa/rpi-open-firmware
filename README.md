@@ -1,13 +1,15 @@
 # Minimal Raspberry Pi VPU firmware
-This is a small firmware for RPi VPU (VideoCore4) versions 1/2/3 that is capable of initializing UART, VPU PLL (PLLC) and ARM itself. It's intended to be used instead of stock `bootcode.bin` on RPi's SD card. You **need** to have UART to see anything meaningful as far as output goes.
+This is a small firmware for RPi VPU (VideoCore4) versions 1/2/3 that is capable of initializing VPU PLL (PLLC), UART, SDRAM and ARM itself. It's intended to be used instead of stock `bootcode.bin` on RPi's SD card. You **need** to have UART to see anything meaningful as far as output goes.
 
 This has been tested on RPi1 Model B (Hynix PoP DDR), RPi 2 Model B and RPi 3 Model B (both Elpida DDR). 
 
-If you want to contact me because you're interested in contributing, you can message `kristina` on Freenode, but I would suggest talking in `#raspberrypi-internals` instead.
+If you want to contact me because you're interested in contributing, you can message `kristina` on Freenode, but I would suggest talking in `#raspberrypi-internals` instead. Any pull requests are appreciated.
+
+All Broadcom headers are licensed under 3-Clause BSD License while the rest of this is under GPLv2+. See `LICENSE` for more information.
 
 ## Building
 
-You need Julian Brown's VC4 toolchain to build this (https://github.com/puppeh/vc4-toolchain) as well as a arm-none-eabi-toolchain. You can tweak the paths to it in CROSS_COMPILE in `Makefile` (for VC4) and for ARM in `arm_chainloader/Makefile`. After you've done it, run `buildall.sh` and you should have a blob in `build/bootcode.bin`. 
+You need Julian Brown's VC4 toolchain to build this (https://github.com/puppeh/vc4-toolchain) as well as a `arm-none-eabi` toolchain. You can tweak the paths to it in CROSS_COMPILE in `Makefile` (for VC4) and for ARM in `arm_chainloader/Makefile`. After you've done it, run `buildall.sh` and you should have a blob in `build/bootcode.bin`. 
 
 ## Technical Details
 The firmware is split into two parts, a VC4 part and and ARM part. The VC4 part initializes PLLC and moves VPU over to it, and then brings up UART. It then performs SDRAM initialization, making SDRAM available at `0xC0000000` (uncached alias). The ARM loader will do ARM initialization and then copy the ARM bootloader that's embedded in it to the alias. It will then map it to `0x0` in ARM's memory space and start ARM. The code under `arm_chainloader` is what will run on the ARM. 
@@ -29,6 +31,7 @@ Eventually maybe. Since `start.elf` is responsible for clock and power managemen
 ## Thanks To
  * **Herman Hermitage** for his VC4 documentation and for helping me with working out suitable ARM PLL configurations.
  * **Julian Brown** for reviewing my code and for his awesome VC4 toolchain.
+ * **David Given** for his initial LLVM project which I used as the base for my LLVM toolchain before moving to GCC.
  * **phire** for reviewing my code.
  * **Broadcom** for their header release.
  * Various other people not mentioned here.
