@@ -266,7 +266,7 @@ static void sdram_calibrate() {
 	while ((SD_MR & SD_MR_DONE_SET) != SD_MR_DONE_SET) {}
 	SD_MRT = old_mrt;
 
-	sdram_write_mr(LPDDR2_MR_IO_CONFIG, is_thing ? 3 : 2, false);
+	sdram_write_mr(LPDDR2_MR_IO_CONFIG, st ? 3 : 2, false);
 }
 
 static void sdram_selftest()
