@@ -4,7 +4,10 @@ TARGET_ARM_CHAINLOADER = arm_chainloader.bin
 SRCS = \
 	start.s \
 	drivers/uart.c \
+	drivers/cprman.cc \
+	drivers/sdhost.cc \
 	../lib/xprintf.c \
+	../lib/udelay.c \
 	firmware_rendezvous.c \
 	main.c
 
@@ -27,11 +30,13 @@ OBJ := $(addprefix $(TARGET_BUILD_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
 CROSS_COMPILE = arm-none-eabi-
 CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)gcc
 AS = $(CC)
 OBJCOPY = $(CROSS_COMPILE)objcopy
 LINKFLAGS = -nostdlib -march=$(ARCH) -Wl,--build-id=none -T linker.lds
 COMMON_FLAGS = -c -nostdlib -nostartfiles -ffreestanding -march=$(ARCH) -I../ -I./ -mfpu=vfp -mfloat-abi=hard -mtune=arm1176jzf-s
 CFLAGS = $(COMMON_FLAGS) -std=c11 
+CXXFLAGS = $(COMMON_FLAGS) -std=c++11 -fno-exceptions -fno-rtti
 ASFLAGS = $(COMMON_FLAGS) -x assembler-with-cpp
 
 HEADERS := \
@@ -53,6 +58,11 @@ $(TARGET_BUILD_DIR)/%.o: %.c $(HEADERS)
 	$(CREATE_SUBDIR)
 	@echo $(WARN_COLOR)CC  $(NO_COLOR) $@
 	@$(CC) $(CFLAGS) $< -o $@
+
+$(TARGET_BUILD_DIR)/%.o: %.cc $(HEADERS)
+	$(CREATE_SUBDIR)
+	@echo $(WARN_COLOR)CXX $(NO_COLOR) $@
+	@$(CXX) $(CXXFLAGS) $< -o $@
 
 $(TARGET_BUILD_DIR)/%.o: %.s $(HEADERS)
 	$(CREATE_SUBDIR)
