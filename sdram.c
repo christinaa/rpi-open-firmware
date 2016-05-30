@@ -1,5 +1,6 @@
 /*=============================================================================
 Copyright (C) 2016 Kristina Brooks
+Copyright (C) 2016 Julian Brown
 All rights reserved.
 
 This program is free software; you can redistribute it and/or
@@ -17,37 +18,96 @@ VideoCoreIV SDRAM initialization code.
 
 =============================================================================*/
 
-#include "lib/common.h"
-#include "hardware.h"
+#include <common.h>
+#include <hardware.h>
 
+
+/*
+ Registers
+ =========
+
+ SC: AC Timing (Page 202)
+ SB: ???
+ SD: AC Timing (Page 202)
+ SE: AC Timing (Page 202)
+
+ PT1:
+	Minimum Idle time after first CKE assertion
+	Minimum CKE low time after completion of power ramp
+ PT2: 
+	DAI Duration
+ */
 
 extern uint32_t g_CPUID;
 
 #define MR_REQUEST_SUCCESS(x) ((SD_MR_TIMEOUT_SET & x) != SD_MR_TIMEOUT_SET)
 #define MR_GET_RDATA(x) ((x & SD_MR_RDATA_SET) >> SD_MR_RDATA_LSB)
 
-#define RAM_TEST_ADDR 0xC0000000
-#define RAM_TEST_PATTERN 0xAAAAAAAA
-
 #define SIP_DEBUG(x) x
 #define SCLKU_DEBUG(x) //SIP_DEBUG(x)
 
-ALWAYS_INLINE inline void sdram_clkman_update_begin() {
+#define BIST_pvt    0x20
+#define BIST_reset  0x10
+
+#define PVT_calibrate_request 0x1
+
+#define logf(fmt, ...) printf("[SDRAM::%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
+
+unsigned g_RAMSize = RAM_SIZE_UNKNOWN;
+
+static const char* lpddr2_manufacturer_name(uint32_t mr) {
+	switch (mr) {
+		case 1: return "Samsung";
+		case 2: return "Qimonda";
+		case 3: return "Elpida";
+		case 4: return "Etron";
+		case 5: return "Nanya";
+		case 6: return "Hynix";
+		default: return "Unknown";
+	}
+}
+
+#define MR8_DENSITY_SHIFT	0x2
+#define MR8_DENSITY_MASK	(0xF << 0x2)
+
+static unsigned lpddr2_size(uint32_t mr) {
+	switch (mr) {
+		case 0x58: return RAM_SIZE_1GB;
+		case 0x18: return RAM_SIZE_512MB;
+		case 0x14: return RAM_SIZE_256MB;
+		case 0x10: return RAM_SIZE_128MB;
+		default: return RAM_SIZE_UNKNOWN;
+	}
+}
+
+const char* size_to_string[] = {
+	"1GB",
+	"512MB",
+	"256MB",
+	"128MB",
+	"UNKNOWN"
+};
+
+/*****************************************************************************
+ * Guts
+ *****************************************************************************/
+
+ALWAYS_INLINE inline void clkman_update_begin() {
 	CM_SDCCTL |= CM_PASSWORD | CM_SDCCTL_UPDATE_SET;
-	SCLKU_DEBUG(printf("%s: waiting for ACCPT (%X) ...\n", __FUNCTION__, CM_SDCCTL));
+	SCLKU_DEBUG(logf("waiting for ACCPT (%X) ...\n", CM_SDCCTL));
 	for (;;) if (CM_SDCCTL & CM_SDCCTL_ACCPT_SET) break;
-	SCLKU_DEBUG(printf("%s: ACCPT received! (%X)\n", __FUNCTION__, CM_SDCCTL));
+	SCLKU_DEBUG(logf("ACCPT received! (%X)\n", CM_SDCCTL));
 }
 
-ALWAYS_INLINE inline void sdram_clkman_update_end() {
+ALWAYS_INLINE inline void clkman_update_end() {
 	CM_SDCCTL = CM_PASSWORD | (CM_SDCCTL & CM_SDCCTL_UPDATE_CLR);
-	SCLKU_DEBUG(printf("%s: waiting for ACCPT clear (%X) ...\n", __FUNCTION__, CM_SDCCTL));
+	SCLKU_DEBUG(logf("waiting for ACCPT clear (%X) ...\n", CM_SDCCTL));
 	for (;;) if ((CM_SDCCTL & CM_SDCCTL_ACCPT_SET) == 0) break;
-	SCLKU_DEBUG(printf("%s: ACCPT cleared! (%X)\n", __FUNCTION__, CM_SDCCTL));
+	SCLKU_DEBUG(logf("ACCPT cleared! (%X)\n", CM_SDCCTL));
 }
 
-ALWAYS_INLINE void sdram_reset_phy_lines() {
-	SIP_DEBUG(printf("%s: resetting APHY/DPHY lines ...\n", __FUNCTION__));
+ALWAYS_INLINE void reset_phy_dll() {
+	SIP_DEBUG(logf("resetting aphy and dphy dlls ...\n", __FUNCTION__));
 
 	/* politely tell sdc that we'll be messing with address lines */
 	APHY_CSR_PHY_BIST_CNTRL_SPR = 0x30;
@@ -64,77 +124,182 @@ ALWAYS_INLINE void sdram_reset_phy_lines() {
 	DPHY_CSR_GLBL_DQ_DLL_RESET = 0x0;
 	APHY_CSR_GLBL_ADDR_DLL_RESET = 0x0;
 
-	SIP_DEBUG(printf("%s: waiting for DPHY master PLL to lock ...\n", __FUNCTION__));
+	SIP_DEBUG(logf("waiting for dphy master dll to lock ...\n", __FUNCTION__));
 	for (;;) if ((DPHY_CSR_GLBL_MSTR_DLL_LOCK_STAT & 0xFFFF) == 0xFFFF) break;
-	SIP_DEBUG(printf("%s: DPHY master PLL locked!\n", __FUNCTION__));
+	SIP_DEBUG(logf("dphy master dll locked!\n", __FUNCTION__));
 }
 
-void sdram_init_late() {
+typedef struct {
+	uint32_t max_freq;
+	uint32_t RL;
+	uint32_t tRPab;
+	uint32_t tRPpb;
+	uint32_t tRCD;
+	uint32_t tWR;
+	uint32_t tRASmin;
+	uint32_t tRRD;
+	uint32_t tWTR;
+	uint32_t tXSR;
+	uint32_t tXP;
+	uint32_t tRFCab;
+	uint32_t tRTP;
+	uint32_t tCKE;
+	uint32_t tCKESR;
+	uint32_t tDQSCKMAXx2;
+	uint32_t tRASmax;
+	uint32_t tFAW;
+	uint32_t tRC;
+	uint32_t tREFI;
+
+	uint32_t tINIT1;
+	uint32_t tINIT3;
+	uint32_t tINIT5;
+
+	uint32_t rowbits;
+	uint32_t colbits;
+	uint32_t banklow;
+} lpddr2_timings_t;
+
+// 7.8 / (1.0 / 400)
+
+lpddr2_timings_t g_InitSdramParameters = {
+	/* SA (us) */
+	.tREFI = 3113, //Refresh rate: 3113 * (1.0 / 400) = 7.78us
+	/* SC (ns) */
+	.tRFCab = 50,
+	.tRRD = 2,
+	.tWR = 7,
+	.tWTR = 4,
+	/* SD (ns) */
+	.tRPab = 7,
+	.tRC = 24,
+	.tXP = 1,
+	.tRASmin = 15,
+	.tRPpb = 6,
+	.tRCD = 6,
+	/* SE (ns) */
+	.tFAW = 18,
+	.tRTP = 1,
+	.tXSR = 54,
+	/* PT */
+	.tINIT1 = 40, // Minimum CKE low time after completion of power ramp: 40 * (1.0 / 0.4) = 100ns
+	.tINIT3 = 79800, // Minimum Idle time after first CKE assertion: 79800 * (1.0 / 400) = 199.5us ~ 200us
+	.tINIT5 = 3990, //Max DAI: 3990* (1.0 / 400) = 9.9us ~ 10us
+	/* SB */
+	.rowbits = 2,
+	.colbits = 1,
+	.banklow = 2
+};
+
+void reset_with_timing(lpddr2_timings_t* T) {
 	uint32_t ctrl = 0x4;
 
 	SD_CS = (SD_CS & ~(SD_CS_DEL_KEEP_SET|SD_CS_DPD_SET|SD_CS_RESTRT_SET)) | SD_CS_STBY_SET;
 
 	/* wait for SDRAM controller to go down */
-	SIP_DEBUG(printf("%s: waiting for SDRAM controller to go down (%X) ...\n", __FUNCTION__, SD_CS));
+	SIP_DEBUG(logf("waiting for SDRAM controller to go down (%X) ...\n", SD_CS));
 	for (;;) if ((SD_CS & SD_CS_SDUP_SET) == 0) break;
-	SIP_DEBUG(printf("%s: SDRAM controller down!\n", __FUNCTION__));
+	SIP_DEBUG(logf("SDRAM controller down!\n"));
 
 	/* disable SDRAM clock */
-	sdram_clkman_update_begin();
+	clkman_update_begin();
 	CM_SDCCTL = (CM_SDCCTL & ~(CM_SDCCTL_ENAB_SET|CM_SDCCTL_CTRL_SET)) | CM_PASSWORD;
-	sdram_clkman_update_end();
+	clkman_update_end();
 
-	SIP_DEBUG(printf("%s: SDRAM clock disabled!\n", __FUNCTION__));
+	SIP_DEBUG(logf("SDRAM clock disabled!\n"));
 
-	/* left */
+	/*
+	 * Migrate over to master PLL.
+	 */
 
 	APHY_CSR_DDR_PLL_PWRDWN = 0;
 	APHY_CSR_DDR_PLL_GLOBAL_RESET = 0;
 	APHY_CSR_DDR_PLL_POST_DIV_RESET = 0;
 
-	APHY_CSR_DDR_PLL_VCO_FREQ_CNTRL0 = (1 << 16) | 0x53 /* magic */;
+	/* 400MHz */
+	APHY_CSR_DDR_PLL_VCO_FREQ_CNTRL0 = (1 << 16) | 0x53;
 	APHY_CSR_DDR_PLL_VCO_FREQ_CNTRL1 = 0;
 	APHY_CSR_DDR_PLL_MDIV_VALUE = 0;
+
 	APHY_CSR_DDR_PLL_GLOBAL_RESET = 1;
 
-	SIP_DEBUG(printf("%s: waiting for APHY DDR PLL to lock ...\n", __FUNCTION__));
+	SIP_DEBUG(logf("waiting for master ddr pll to lock ...\n"));
 	for (;;) if (APHY_CSR_DDR_PLL_LOCK_STATUS & (1 << 16)) break;
-	SIP_DEBUG(printf("%s: APHY DDR PLL locked!\n", __FUNCTION__));
+	SIP_DEBUG(logf("master ddr pll locked!\n"));
 
- 	APHY_CSR_DDR_PLL_POST_DIV_RESET = 1;
+	APHY_CSR_DDR_PLL_POST_DIV_RESET = 1;
 
-	sdram_clkman_update_begin();
-
+	clkman_update_begin();
 	CM_SDCCTL = CM_PASSWORD | (ctrl << CM_SDCCTL_CTRL_LSB) | (CM_SDCCTL & CM_SDCCTL_CTRL_CLR);
-	sdram_clkman_update_end();
+	clkman_update_end();
 
-	SIP_DEBUG(printf("%s: CM_SDCCTL = 0x%X\n", __FUNCTION__, CM_SDCCTL));
+	SD_SA =
+		(T->tREFI << SD_SA_RFSH_T_LSB)
+			| SD_SA_PGEHLDE_SET
+			| SD_SA_CLKSTOP_SET
+			| SD_SA_POWSAVE_SET
+			| 0x3214;
 
-	/* second stage magic values */
-	SD_SA = 0x0C293395;
-	SD_SB = 0x0F9;
-	SD_SC = 0x32200743;
-	SD_SD = 0x71810F66;
-	SD_SE = 0x10412136;
-	SD_PT1 = 0x137B828;
-	SD_PT2 = 0x0F96;
-	SD_MRT = 0x3;
+	SD_SB =
+		SD_SB_REORDER_SET
+			| (T->banklow << SD_SB_BANKLOW_LSB)
+			| SD_SB_EIGHTBANK_SET
+			| (T->rowbits << SD_SB_ROWBITS_LSB)
+			| (T->colbits << SD_SB_COLBITS_LSB);
 
-	sdram_reset_phy_lines();
+	logf("SDRAM Addressing Mode: Bank=%d Row=%d Col=%d SB=0x%X\n", T->banklow, T->rowbits, T->colbits, SD_SB);
+
+	SD_SC =
+		(T->tRFCab << SD_SC_T_RFC_LSB)
+			| (T->tRRD << SD_SC_T_RRD_LSB)
+			| (T->tWR << SD_SC_T_WR_LSB)
+			| (T->tWTR << SD_SC_T_WTR_LSB)
+			| (3 << SD_SC_WL_LSB);
+
+	SD_SD =
+		(T->tRPab << SD_SD_T_RPab_LSB)
+			| (T->tRC << SD_SD_T_RC_LSB)
+			| (T->tXP << SD_SD_T_XP_LSB)
+			| (T->tRASmin << SD_SD_T_RAS_LSB)
+			| (T->tRPpb << SD_SD_T_RPpb_LSB)
+			| (T->tRCD << SD_SD_T_RCD_LSB);
+
+	SD_SE =
+		(1 << SD_SE_RL_EN_LSB)
+			| (4 << SD_SE_RL_LSB)
+			| (T->tFAW << SD_SE_T_FAW_LSB)
+			| (T->tRTP << SD_SE_T_RTP_LSB)
+			| (T->tXSR << SD_SE_T_XSR_LSB);
+
+	SD_PT1 =
+		(T->tINIT3 << SD_PT1_T_INIT3_LSB)
+			| (T->tINIT1 << SD_PT1_T_INIT1_LSB);
+
+	SD_PT2 =
+		T->tINIT5 << SD_PT2_T_INIT5_LSB;
+
+	SD_MRT =
+		0x3 << SD_MRT_T_MRW_LSB;
+
+	reset_phy_dll();
 
 	/* wait for address line pll to come back */
-	SIP_DEBUG(printf("%s: waiting for APHY global PLL to lock ...\n", __FUNCTION__));
+	SIP_DEBUG(logf("waiting for address dll to lock ...\n"));
 	for (;;) if (APHY_CSR_GLBL_ADR_DLL_LOCK_STAT == 3) break;
-	SIP_DEBUG(printf("%s: APHY global PLL locked!\n", __FUNCTION__));
+	SIP_DEBUG(logf("address dll locked!\n"));
 
 	/* tell sdc we're done messing with address lines */
 	APHY_CSR_PHY_BIST_CNTRL_SPR = 0x0;
 
 	/* woo, turn on sdram! */
-	SD_CS = (0x200042 & ~(SD_CS_STOP_SET|SD_CS_STBY_SET)) | SD_CS_RESTRT_SET;
+	SD_CS =
+		(((4 << SD_CS_ASHDN_T_LSB)
+			| SD_CS_STATEN_SET
+			| SD_CS_EN_SET)
+ 		& ~(SD_CS_STOP_SET|SD_CS_STBY_SET)) | SD_CS_RESTRT_SET;
 }
 
-unsigned int sdram_read_mr(unsigned int addr) {
+unsigned int read_mr(unsigned int addr) {
 	while ((SD_MR & SD_MR_DONE_SET) != SD_MR_DONE_SET) {}
 	SD_MR = addr & 0xFF;
 	unsigned int mrr;
@@ -142,7 +307,7 @@ unsigned int sdram_read_mr(unsigned int addr) {
 	return mrr;
 }
 
-unsigned int sdram_write_mr(unsigned int addr, unsigned int data, bool wait) {
+unsigned int write_mr(unsigned int addr, unsigned int data, bool wait) {
 	while ((SD_MR & SD_MR_DONE_SET) != SD_MR_DONE_SET) {}
 
 	SD_MR = (addr & 0xFF) | ((data & 0xFF) << 8) | SD_MR_RW_SET;
@@ -161,98 +326,78 @@ unsigned int sdram_write_mr(unsigned int addr, unsigned int data, bool wait) {
 	}
 }
 
-void sdram_reset_phy() {
-	printf("%s: resetting SDRAM PHY ...\n", __FUNCTION__);
+void reset_phy() {
+	logf("%s: resetting SDRAM PHY ...\n", __FUNCTION__);
 
 	/* reset PHYC */
 	SD_PHYC = SD_PHYC_PHYRST_SET;
 	udelay(64);
 	SD_PHYC = 0;
 
-	printf("%s: resetting DPHY CTRL ...\n", __FUNCTION__);
+	logf("%s: resetting DPHY CTRL ...\n", __FUNCTION__);
 
 	DPHY_CSR_DQ_PHY_MISC_CTRL = 0x7;
 	DPHY_CSR_DQ_PAD_MISC_CTRL = 0x0;
 	DPHY_CSR_BOOT_READ_DQS_GATE_CTRL = 0x11;
 
-	sdram_reset_phy_lines();
+	reset_phy_dll();
 
 	APHY_CSR_PHY_BIST_CNTRL_SPR = 0x0;
 }
 
-static void sdram_set_clock_source(unsigned int source, unsigned int div_) {
-	CM_SDCDIV = CM_PASSWORD | (div_ << CM_SDCDIV_DIV_LSB);
+static void switch_to_cprman_clock(unsigned int source, unsigned int div) {
+	CM_SDCDIV = CM_PASSWORD | (div << CM_SDCDIV_DIV_LSB);
 	CM_SDCCTL = CM_PASSWORD | (CM_SDCCTL & CM_SDCCTL_SRC_CLR) | source;
 	CM_SDCCTL |= CM_PASSWORD | CM_SDCCTL_ENAB_SET;
 
-	printf("%s: source set to %d, div to %d, waiting for BUSY set (%X) ... \n", __FUNCTION__, source, div_, CM_SDCCTL);
+	logf("switching sdram to cprman clock (src=%d, div=%d), waiting for busy (%X) ...\n", source, div, CM_SDCCTL);
 
 	for (;;) if (CM_SDCCTL & CM_SDCCTL_BUSY_SET) break;
 
-	printf("%s: BUSY set! (%X)\n", __FUNCTION__, CM_SDCCTL);
+	logf("busy set, switch complete!\n");
 }
 
-static void sdram_init_clkman()
+static void init_clkman()
 {
 	uint32_t ctrl = 0;
 
-	sdram_clkman_update_begin();
+	clkman_update_begin();
 	CM_SDCCTL = CM_PASSWORD | (ctrl << CM_SDCCTL_CTRL_LSB) | (CM_SDCCTL & CM_SDCCTL_CTRL_CLR);
-	sdram_clkman_update_end();
+	clkman_update_end();
 }
 
-static const char* lpddr2_manufacturer_name(uint32_t mr) {
-	switch (mr) {
-		case 1: return "Samsung";
-		case 2: return "Qimonda";
-		case 3: return "Elpida";
-		case 4: return "Etron";
-		case 5: return "Nanya";
-		case 6: return "Hynix";
-		default: return "Unknown";
-	}
-}
+	#define CALL_INIT_CLKMAN init_clkman();
 
-static const char* lpddr2_density(uint32_t mr) {
-	/*
-	 * i'm so stupid, why did i not notice that LPDDR2
-	 * spec listed those as bits, not bytes *sigh*
-	 */
-	switch ((mr & 0x33) >> 3) {
-		case 1: return "128MB";
-		case 2: return "256MB";
-		case 3: return "512MB";
-		case 4: return "1GB";
-		case 5: return "2GB";
-		case 6: return "4GB";
-		default: return "Unknown";
-	}
-}
 
-static void sdram_calibrate() {
+/*****************************************************************************
+ * Calibration
+ *****************************************************************************/
+
+static void calibrate_pvt_early() {
 	/* some hw revisions require different slews */
 	bool st = ((g_CPUID >> 4) & 0xFFF) == 0x14;
 	uint32_t dq_slew = (st ? 2 : 3);
 
 	/* i don't get it, the spec says do not use this register */
-	sdram_write_mr(0xFF, 0, true);
+	write_mr(0xFF, 0, true);
 	/* RL = 6 / WL = 3 */
-	sdram_write_mr(LPDDR2_MR_DEVICE_FEATURE_2, 4, true);
+	write_mr(LPDDR2_MR_DEVICE_FEATURE_2, 4, true);
 
 	APHY_CSR_ADDR_PAD_DRV_SLEW_CTRL = 0x333;
 	DPHY_CSR_DQ_PAD_DRV_SLEW_CTRL = (dq_slew << 8) | (dq_slew << 4) | 3;
 
-	printf("%s: DPHY_CSR_DQ_PAD_DRV_SLEW_CTRL = 0x%X\n", __FUNCTION__, DPHY_CSR_DQ_PAD_DRV_SLEW_CTRL);
+	logf("DPHY_CSR_DQ_PAD_DRV_SLEW_CTRL = 0x%X\n", DPHY_CSR_DQ_PAD_DRV_SLEW_CTRL);
 
 	/* tell sdc we want to calibrate */
-	APHY_CSR_PHY_BIST_CNTRL_SPR = 0x20;
+	APHY_CSR_PHY_BIST_CNTRL_SPR = BIST_pvt;
 
-	APHY_CSR_ADDR_PVT_COMP_CTRL = 0x1;
-	printf("%s: waiting for address PVT calibration ...\n", __FUNCTION__);
+	/* pvt compensation */
+	APHY_CSR_ADDR_PVT_COMP_CTRL = PVT_calibrate_request;
+	logf("waiting for address PVT calibration ...\n");
 	for (;;) if (APHY_CSR_ADDR_PVT_COMP_STATUS & 2) break;
 
-	DPHY_CSR_DQ_PVT_COMP_CTRL = 0x1;
-	printf("%s: waiting for data PVT calibration ...\n", __FUNCTION__);
+	DPHY_CSR_DQ_PVT_COMP_CTRL = PVT_calibrate_request;
+	logf("waiting for data PVT calibration ...\n");
 	for (;;) if (DPHY_CSR_DQ_PVT_COMP_STATUS & 2) break;
 
 	/* tell sdc we're done calibrating */
@@ -261,33 +406,87 @@ static void sdram_calibrate() {
 	/* send calibration command */
 	uint32_t old_mrt = SD_MRT;
 	SD_MRT = 20;
-	printf("%s: waiting for SDRAM calibration command ...\n", __FUNCTION__);
+	logf("waiting for SDRAM calibration command ...\n");
 	SD_MR = LPDDR2_MR_CALIBRATION | (0xFF << 8) | SD_MR_RW_SET | SD_MR_HI_Z_SET;
 	while ((SD_MR & SD_MR_DONE_SET) != SD_MR_DONE_SET) {}
 	SD_MRT = old_mrt;
 
-	sdram_write_mr(LPDDR2_MR_IO_CONFIG, st ? 3 : 2, false);
+	write_mr(LPDDR2_MR_IO_CONFIG, st ? 3 : 2, false);
 }
 
-static void sdram_selftest()
-{
-	volatile uint32_t* p = (volatile uint32_t*)RAM_TEST_ADDR;
 
-	printf("Testing SDRAM ...\n");
+/*****************************************************************************
+ * Late init
+ *****************************************************************************/
 
-	for (int i = 0; i < 0x100000; i++) {
-		p[i] = RAM_TEST_PATTERN;
-		if (p[i] != RAM_TEST_PATTERN)
-			panic("sdram initialization failed (idx=%d exptected=0x%x got=0x%x)", i, RAM_TEST_PATTERN, p[i]);
+static void init_late() {
+}
+
+/*****************************************************************************
+ * Self-test
+ *****************************************************************************/
+
+#define RT_BASE 0xC0000000
+
+#define RT_PAT0 0xAAAAAAAA
+#define RT_PAT1 0xFF00AA00
+#define RT_PAT2 0x99999999
+
+#define RT_ASSERT(i_, expected) \
+	if (ram[(i_)] != expected) { \
+		logf("ERROR: At 0x%X, was expecting 0x%X from read, got 0x%X instead!\n", \
+			(uint32_t)&ram[(i_)], \
+			expected, \
+			ram[(i_)]); \
+		panic("SDRAM self test failed!"); \
 	}
 
-	printf("SDRAM test successful!\n");
+static void selftest_at(uint32_t addr) {
+	volatile uint32_t* ram = (volatile uint32_t*)addr;
+
+	logf("Testing region at 0x%X ...\n", addr);
+
+	for (int i = 0; i < 0x1000; i += 4) {
+		ram[i]     = RT_PAT0;
+		ram[i + 1] = RT_PAT1;
+		ram[i + 2] = RT_PAT2;
+		ram[i + 3] = RT_PAT0;
+	}
+
+	for (int i = 0; i < 0x1000; i += 4) {
+		RT_ASSERT(i,     RT_PAT0);
+		RT_ASSERT(i + 1, RT_PAT1);
+		RT_ASSERT(i + 2, RT_PAT2);
+		RT_ASSERT(i + 3, RT_PAT0);
+	}
 }
+
+static void selftest()
+{
+	logf("Starting self test ...\n");
+
+	selftest_at(RT_BASE);
+
+	if (g_RAMSize == RAM_SIZE_256MB || g_RAMSize == RAM_SIZE_512MB || g_RAMSize == RAM_SIZE_1GB) {
+		selftest_at(RT_BASE + 0xFF00000);
+	}
+	if (g_RAMSize == RAM_SIZE_512MB || g_RAMSize == RAM_SIZE_1GB) {
+		selftest_at(RT_BASE + 0x1FF00000);
+	}
+	if (g_RAMSize == RAM_SIZE_1GB) {
+		selftest_at(RT_BASE + 0x2FF00000);
+		selftest_at(RT_BASE + 0x3FF00000);
+	}
+
+	logf("Self test successful!\n");
+}
+
+#undef RT_ASSERT
 
 void sdram_init() {
 	uint32_t vendor_id, bc;
 
-	printf("%s: (0) SD_CS = 0x%X\n", __FUNCTION__, SD_CS);
+	logf("(0) SD_CS = 0x%X\n", SD_CS);
 
 	PM_SMPS = PM_PASSWORD | 0x1;
 	A2W_SMPS_LDO1 = A2W_PASSWORD | 0x40000;
@@ -301,14 +500,14 @@ void sdram_init() {
 	 * the calibration sequence.
 	 */
 
-	sdram_set_clock_source(CM_SRC_OSC, 1);
-	
-	sdram_init_clkman();
+	switch_to_cprman_clock(CM_SRC_OSC, 1);
 
-	sdram_reset_phy();
+	CALL_INIT_CLKMAN;
+
+	reset_phy();
 
 	/* magic values */
-	SD_SA = 0x6E3395;
+	SD_SA = 0x006E3395;
 	SD_SB = 0x0F9;
 	SD_SC = 0x6000431;
 	SD_SD = 0x10000011;
@@ -319,31 +518,36 @@ void sdram_init() {
 	SD_CS = 0x200042;
 
 	/* wait for SDRAM controller */
-	printf("%s: waiting for SDUP (%X) ...\n", __FUNCTION__, SD_CS);
+	logf("waiting for SDUP (%X) ...\n", SD_CS);
 	for (;;) if (SD_CS & SD_CS_SDUP_SET) break;
-	printf("%s: SDRAM controller has arrived! (%X)\n", __FUNCTION__, SD_CS);
+	logf("SDRAM controller has arrived! (%X)\n", SD_CS);
 	
 	/* RL = 6 / WL = 3 */
-	sdram_write_mr(LPDDR2_MR_DEVICE_FEATURE_2, 4, false);
-	sdram_calibrate();
+	write_mr(LPDDR2_MR_DEVICE_FEATURE_2, 4, false);
+	calibrate_pvt_early();
 
 	/* identify installed memory */
-	vendor_id = sdram_read_mr(LPDDR2_MR_MANUFACTURER_ID);
+	vendor_id = read_mr(LPDDR2_MR_MANUFACTURER_ID);
 	if (!MR_REQUEST_SUCCESS(vendor_id)) {
 		panic("vendor id memory register read timed out");
 	}
 	vendor_id = MR_GET_RDATA(vendor_id);
 
-	bc = sdram_read_mr(LPDDR2_MR_METRICS);
+	bc = read_mr(LPDDR2_MR_METRICS);
 	if (!MR_REQUEST_SUCCESS(bc)) {
 		panic("basic configuration memory register read timed out");
 	}
 	bc = MR_GET_RDATA(bc);
 
-	printf("SDRAM Type: %s %s LPDDR2 (BC=0x%X)\n",
+	g_RAMSize = lpddr2_size(bc);
+
+	logf("SDRAM Type: %s %s LPDDR2 (BC=0x%X)\n",
 		lpddr2_manufacturer_name(vendor_id),
-		lpddr2_density(bc),
+		size_to_string[g_RAMSize],
 		bc);
+
+	if (g_RAMSize == RAM_SIZE_UNKNOWN)
+		panic("unknown ram size (MR8 response was 0x%X)", bc);
 
 	/*
 	 * STEP 2:
@@ -354,7 +558,21 @@ void sdram_init() {
 	 * mess with SDRAM clock it would need to do that.
 	 */
 
-	sdram_init_late();
-	sdram_selftest();
+	if (g_RAMSize == RAM_SIZE_1GB) {
+		logf("*** USING LOW tREFI (~7.8us) FOR 1GB, YOUR RAM MAY LEAK!!!!\n");
+
+		g_InitSdramParameters.colbits = 3;
+		g_InitSdramParameters.rowbits = 3;
+		g_InitSdramParameters.banklow = 3;
+	}
+	else if (g_RAMSize == RAM_SIZE_512MB) {
+		logf("*** USING LOW tREFI (~7.8us) FOR 512MB, YOUR RAM MAY LEAK!!!!\n");
+
+		g_InitSdramParameters.colbits = 2;
+	}
+
+	reset_with_timing(&g_InitSdramParameters);
+	init_late();
+	selftest();
 }
 
