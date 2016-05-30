@@ -41,19 +41,20 @@ _start:
 	mov r0, cpuid
 	mov r5, r0
 
-	# get addr of the exception vector table
-	lea r1, __INTERRUPT_VECTORS
-	mov r3, r1
+	/* vectors */
+	mov r3, #0x1B000
+	mov r1, r3
 
 	/*
 	 * populate the exception vector table using PC relative labels
 	 * so the code isnt position dependent
 	 */
 .macro RegExceptionHandler label, exception_number
-	lea r2, Exc_\label
+	lea r2, fleh_\label
 	st r2, (r1)
 	add r1, #4
 .endm
+
 
 	RegExceptionHandler zero, #0
 	RegExceptionHandler misaligned, #1
@@ -70,6 +71,14 @@ _start:
 	RegExceptionHandler badl2alias, #12
 	RegExceptionHandler breakpoint, #13
 	RegExceptionHandler unknown, #14
+
+	add r1, r3, #252
+	lea r2, fleh_irq
+	mov r4, #492
+
+L_setup_hw_irq:
+	st r2, (r1)++
+	ble r1, r4, L_setup_hw_irq
 
 	/*
 	 * load the interrupt and normal stack pointers. these
@@ -125,17 +134,30 @@ delayloop2:
  * Exception Handling
  ************************************************************/
 
-_sleh_generic_gate:
-	# get faulting PC
-	ld r1, 4(sp)
-	# call the C exception handler
+.macro SaveRegsLower 
+	push r0-r5, lr
+.endm
+
+.macro SaveRegsUpper
+	push r6-r15
+	push r16-r23
+.endm
+
+.macro SaveRegsAll
+	SaveRegsLower
+	SaveRegsUpper
+.endm
+
+fatal_exception:
+	SaveRegsUpper
+	mov r0, sp
 	b sleh_fatal
 
-
 .macro ExceptionHandler label, exception_number
-Exc_\label:
-	mov r0, \exception_number
-	b _sleh_generic_gate
+fleh_\label:
+	SaveRegsLower
+	mov r1, \exception_number
+	b fatal_exception
 .endm
 
 	ExceptionHandler zero, #0
@@ -154,12 +176,16 @@ Exc_\label:
 	ExceptionHandler breakpoint, #13
 	ExceptionHandler unknown, #14
 
-/************************************************************
- * ISRs
- ************************************************************/
+fleh_irq:
+	SaveRegsAll
 
-.align 4
-__INTERRUPT_VECTORS:
-	# 31 slots, 4 byte each for processor exceptions. patched to have the correct
-	# exception handler routines at runtime to allow the code to be loaded anywhere
-	.space 124, 0
+	/* top of savearea */
+	mov r0, sp
+	bl sleh_irq
+
+return_from_exception:
+	pop r16-r23
+	pop r6-r15
+	pop r0-r15
+	ld lr, (sp)++
+	rti
