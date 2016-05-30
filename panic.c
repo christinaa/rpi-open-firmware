@@ -17,20 +17,21 @@ Panic routine.
 
 =============================================================================*/
 
+#include <common.h>
+#include <cpu.h>
 
-#include "xprintf.h"
+#undef panic
 
 void panic(const char* fmt,  ...) {
-	xputs("panic(): ");
+	printf("panic(): ");
 
 	va_list arp;
+
 	va_start(arp, fmt);
-	xvprintf(fmt, arp);
+	vprintf(fmt, arp);
 	va_end(arp);
 
-	xputc('\n');
+	putchar('\n');
 
-	for (;;) {
-		__asm__ __volatile__ ("nop" :::);
-	}
+	hang_cpu();
 }
