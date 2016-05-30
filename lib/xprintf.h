@@ -15,6 +15,10 @@
 #define _USE_XFUNC_OUT	1	/* 1: Use output functions */
 #define	_CR_CRLF		1	/* 1: Convert \n ==> \r\n in the output char */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void xputc (char c);
 void xputs (const char* str);
 void xfputs (void (*func)(unsigned char), const char* str);
@@ -32,5 +36,9 @@ void xvprintf (
 #define DW_CHAR		sizeof(char)
 #define DW_SHORT	sizeof(short)
 #define DW_LONG		sizeof(long)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

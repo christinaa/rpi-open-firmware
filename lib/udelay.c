@@ -18,6 +18,7 @@ Simple timer based delay routine.
 =============================================================================*/
 
 #ifdef __arm__
+#include <stdint.h>
 #else
 #include "common.h"
 #endif
