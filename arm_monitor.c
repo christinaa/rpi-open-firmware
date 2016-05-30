@@ -13,37 +13,19 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 FILE DESCRIPTION
-ARM entry point.
-
-This is where all cores start. For RPi1, only one core starts so we can jump
-straight to the main bootloader. For later models,
+First stage monitor.
 
 =============================================================================*/
 
-.text
-.globl _start
-_start:
-	/* vectors */
-	b L_all_cores_start
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
+#include <common.h>
+#include "hardware.h"
 
-	/* comm chan */
-	nop
-	nop
-	nop
-	nop
+void monitor_irq() {
 
-L_all_cores_start:
+}
 
-L_core0:
-	mov sp, #0x2000000
-	b _firmware_rendezvous
+void monitor_start() {
+	printf("Starting IPC monitor ...\n");
 
-L_deadloop:
-	b L_deadloop
+	__asm__ __volatile__ ("sleep" :::);
+}

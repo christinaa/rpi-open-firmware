@@ -25,4 +25,10 @@ void main() {
 
 	/* c++ runtime */
 	cxx_init();
+
+	printf("Done ");
+	for(;;) {
+		printf(".");
+		udelay(1000000);
+	}
 }

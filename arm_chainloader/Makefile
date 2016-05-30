@@ -5,6 +5,7 @@ SRCS = \
 	start.s \
 	drivers/uart.c \
 	drivers/cprman.cc \
+	drivers/fatfs/ff.c \
 	drivers/sdhost.cc \
 	../lib/xprintf.c \
 	../lib/udelay.c \

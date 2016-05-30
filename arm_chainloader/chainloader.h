@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 #include <lib/xprintf.h>
 
 #define printf xprintf
@@ -18,6 +19,12 @@ extern void udelay(uint32_t time);
 #define STATIC_APP STATIC_INIT_PRIORITY(600)
 
 #define mfence() __sync_synchronize()
+
+#define NBBY 8
+
+#define	__BIT(__n)	\
+    (((uintmax_t)(__n) >= NBBY * sizeof(uintmax_t)) ? 0 : \
+    ((uintmax_t)1 << (uintmax_t)((__n) & (NBBY * sizeof(uintmax_t) - 1))))
 
 #ifdef __cplusplus
 }
