@@ -10,9 +10,10 @@ SRCS = \
 	romstage.c \
 	sdram.c \
 	arm_loader.c \
+	arm_monitor.c \
 	trap.c \
-	lib/xprintf.c \
-	lib/panic.c \
+	lib/ee_printf.c \
+	panic.c \
 	lib/udelay.c \
 	lib/memcpy.c \
 	chainloader_inc.s
@@ -39,8 +40,8 @@ CC = $(CROSS_COMPILE)gcc
 AS = $(CC)
 OBJCOPY = $(CROSS_COMPILE)objcopy
 LINKFLAGS = -nostdlib -nostartfiles
-CFLAGS = -c -nostdlib -std=c11
-ASFLAGS = -c -nostdlib -x assembler-with-cpp
+CFLAGS = -c -nostdlib -std=c11 -fsingle-precision-constant -Wdouble-promotion -D__VIDEOCORE4__ -I./vc4_include/
+ASFLAGS = -c -nostdlib -x assembler-with-cpp -D__VIDEOCORE4__ -I./vc4_include/
 
 HEADERS := \
 	$(shell find . -type f -name '*.h') \
