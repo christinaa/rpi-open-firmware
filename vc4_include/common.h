@@ -28,22 +28,12 @@ typedef uint32_t size_t;
 
 # define ALWAYS_INLINE __attribute__((always_inline)) inline
 
-extern void panic(const char* fmt,  ...)
-	__attribute__((noreturn))
-	__attribute__ ((format (printf, 1, 2)));
-
-#define panic_plain(ex, ...) \
-	(panic)(ex, ## __VA_ARGS__)
-#define __STRINGIFY(x) #x
-#define LINE_NUMBER(x) __STRINGIFY(x)
-#define PANIC_LOCATION __FILE__ ":" LINE_NUMBER(__LINE__)
-#define panic(ex, ...) \
-	(panic)(# ex "@" PANIC_LOCATION, ## __VA_ARGS__)
-
 #define _OPEN_SOURCE
 
 extern void udelay(uint32_t time);
 extern uint32_t __div64_32(uint64_t *n, uint32_t base);
+
+#include "../lib/panic.h"
 
 #define do_div __div64_32
 

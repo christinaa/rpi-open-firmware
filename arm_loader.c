@@ -21,7 +21,7 @@ ARM initialization stuff.
 #include "hardware.h"
 
 
-#define logf(fmt, ...) printf("[ARM::%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
+#define logf(fmt, ...) printf("[ARMLDR:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
 extern char L_arm_code_start;
 extern char L_arm_code_end;

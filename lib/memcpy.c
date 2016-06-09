@@ -9,3 +9,16 @@ void *__memcpy(void *_dst, const void *_src, unsigned len)
 	}
 	return _dst;
 }
+
+void *
+memset(void *s, int c, unsigned int n)
+{
+	char *s1 = s;
+	if (n>0) {
+			n++;
+			while (--n > 0) {
+					*s1++ = c;
+			}
+	}
+	return s;
+}

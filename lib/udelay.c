@@ -18,9 +18,9 @@ Simple timer based delay routine.
 =============================================================================*/
 
 #ifdef __arm__
-#include <stdint.h>
+	#include <stdint.h>
 #else
-#include "common.h"
+	#include <common.h>
 #endif
 
 #include "../hardware.h"
@@ -28,7 +28,6 @@ Simple timer based delay routine.
 
 void udelay(uint32_t t) {
 	uint32_t tv = ST_CLO;
-
 	for (;;) {
 		/* nop still takes a cycle i think? */
 		__asm__ __volatile__ ("nop" :::);

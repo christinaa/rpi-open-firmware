@@ -19,16 +19,13 @@
 extern "C" {
 #endif
 
-void xputc (char c);
-void xputs (const char* str);
-void xfputs (void (*func)(unsigned char), const char* str);
-void xprintf (const char* fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void xsprintf (char* buff, const char* fmt, ...);
-void xfprintf (void (*func)(unsigned char), const char*	fmt, ...);
+int putchar (int c);
+int puts (const char* str);
+int printf (const char* fmt, ...) __attribute__ ((format (printf, 1, 2)));
 void put_dump (const void* buff, unsigned long addr, int len, int width);
 
 
-void xvprintf (
+int vprintf (
 	const char*	fmt,	/* Pointer to the format string */
 	va_list arp			/* Pointer to arguments */
 );

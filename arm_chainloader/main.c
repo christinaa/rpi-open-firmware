@@ -4,10 +4,11 @@
 
 extern uintptr_t* __init_array_start;
 extern uintptr_t* __init_array_end;
+extern uintptr_t* _end;
 
-#define logf(fmt, ...) printf("[startup::%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
+#define logf(fmt, ...) printf("[BRINGUP:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
-void cxx_init() {
+static void cxx_init() {
 	unsigned ctor_count = (unsigned)(&__init_array_end - &__init_array_start);
 	void (*static_ctor)();
 
@@ -20,15 +21,30 @@ void cxx_init() {
 	}
 }
 
+static void heap_init() {
+	void* start_of_heap = (void*)&_end;
+	size_t hs = 0x100000;
+
+	logf("Initializing heap at 0x%x with size 0x%x\n", start_of_heap, hs);
+
+	init_memory_pool(hs, start_of_heap);
+}
+
 void main() {
-	logf("started on ARM, continuing boot from here ...\n", __FUNCTION__);
+	logf("Started on ARM, continuing boot from here ...\n", __FUNCTION__);
+
+	heap_init();
 
 	/* c++ runtime */
 	cxx_init();
 
+	panic("Nothing else to do!");
+
+#if 0
 	printf("Done ");
 	for(;;) {
 		printf(".");
 		udelay(1000000);
 	}
+#endif
 }

@@ -19,9 +19,9 @@ extern void uart_putc(unsigned int ch);
 /* Put a character                              */
 /*----------------------------------------------*/
 
-void xputc (char c)
+int putchar (int c)
 {
-	if (_CR_CRLF && c == '\n') xputc('\r');		/* CR -> CRLF */
+	if (_CR_CRLF && c == '\n') putchar('\r');		/* CR -> CRLF */
 
 	uart_putc(c);
 }
@@ -30,12 +30,12 @@ void xputc (char c)
 /* Put a null-terminated string                 */
 /*----------------------------------------------*/
 
-void xputs (					/* Put a string to the default device */
+int puts (					/* Put a string to the default device */
 	const char* str				/* Pointer to the string */
 )
 {
 	while (*str)
-		xputc(*str++);
+		putchar(*str++);
 }
 
 /*----------------------------------------------*/
@@ -55,7 +55,7 @@ void xputs (					/* Put a string to the default device */
     xprintf("%f", 10.0);            <xprintf lacks floating point support>
 */
 
-void xvprintf (
+int vprintf (
 	const char*	fmt,	/* Pointer to the format string */
 	va_list arp			/* Pointer to arguments */
 )
@@ -69,7 +69,7 @@ void xvprintf (
 		c = *fmt++;					/* Get a char */
 		if (!c) break;				/* End of format? */
 		if (c != '%') {				/* Pass through it if not a % sequense */
-			xputc(c); continue;
+			putchar(c); continue;
 		}
 		f = 0;
 		c = *fmt++;					/* Get first char of the sequense */
@@ -92,12 +92,12 @@ void xvprintf (
 		case 'S' :					/* String */
 			p = va_arg(arp, char*);
 			for (j = 0; p[j]; j++) ;
-			while (!(f & 2) && j++ < w) xputc(' ');
-			xputs(p);
-			while (j++ < w) xputc(' ');
+			while (!(f & 2) && j++ < w) putchar(' ');
+			puts(p);
+			while (j++ < w) putchar(' ');
 			continue;
 		case 'C' :					/* Character */
-			xputc((char)va_arg(arp, int)); continue;
+			putchar((char)va_arg(arp, int)); continue;
 		case 'B' :					/* Binary */
 			r = 2; break;
 		case 'O' :					/* Octal */
@@ -108,7 +108,7 @@ void xvprintf (
 		case 'X' :					/* Hexdecimal */
 			r = 16; break;
 		default:					/* Unknown type (passthrough) */
-			xputc(c); continue;
+			putchar(c); continue;
 		}
 
 		/* Get an argument and put it in numeral */
@@ -125,14 +125,14 @@ void xvprintf (
 		} while (v && i < sizeof(s));
 		if (f & 8) s[i++] = '-';
 		j = i; d = (f & 1) ? '0' : ' ';
-		while (!(f & 2) && j++ < w) xputc(d);
-		do xputc(s[--i]); while(i);
-		while (j++ < w) xputc(' ');
+		while (!(f & 2) && j++ < w) putchar(d);
+		do putchar(s[--i]); while(i);
+		while (j++ < w) putchar(' ');
 	}
 }
 
 
-void xprintf (			/* Put a formatted string to the default device */
+int printf (			/* Put a formatted string to the default device */
 	const char*	fmt,	/* Pointer to the format string */
 	...					/* Optional arguments */
 )
@@ -140,7 +140,7 @@ void xprintf (			/* Put a formatted string to the default device */
 	va_list arp;
 
 	va_start(arp, fmt);
-	xvprintf(fmt, arp);
+	vprintf(fmt, arp);
 	va_end(arp);
 }
 
@@ -162,30 +162,30 @@ void put_dump (
 	const unsigned long *lp;
 
 
-	xprintf("%08lX ", addr);		/* address */
+	printf("%08lX ", addr);		/* address */
 
 	switch (width) {
 	case DW_CHAR:
 		bp = buff;
 		for (i = 0; i < len; i++)		/* Hexdecimal dump */
-			xprintf(" %02X", bp[i]);
-		xputc(' ');
+			printf(" %02X", bp[i]);
+		putchar(' ');
 		for (i = 0; i < len; i++)		/* ASCII dump */
-			xputc((bp[i] >= ' ' && bp[i] <= '~') ? bp[i] : '.');
+			putchar((bp[i] >= ' ' && bp[i] <= '~') ? bp[i] : '.');
 		break;
 	case DW_SHORT:
 		sp = buff;
 		do								/* Hexdecimal dump */
-			xprintf(" %04X", *sp++);
+			printf(" %04X", *sp++);
 		while (--len);
 		break;
 	case DW_LONG:
 		lp = buff;
 		do								/* Hexdecimal dump */
-			xprintf(" %08X", *lp++);
+			printf(" %08X", *lp++);
 		while (--len);
 		break;
 	}
 
-	xputc('\n');
+	putchar('\n');
 }

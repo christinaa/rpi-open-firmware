@@ -17,6 +17,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <limits.h>
+
 #pragma once
 
 /* MMC commands */				/* response type */
@@ -335,21 +337,33 @@
 #define SCR_CMD_SUPPORT_CMD20(scr)	MMC_RSP_BITS((scr), 32, 1)
 #define SCR_RESERVED2(scr)		MMC_RSP_BITS((scr), 0, 32)
 
-#define MMC_RSP_BITS(resp, start, len)	__bitfield((resp), (start)-8, (len))
-static inline uint32_t
-__bitfield(const uint32_t *src, size_t start, size_t len)
+#define MMC_RSP_BITS(resp, start, len)	__bitfield((resp), (start), (len))
+static inline int
+__bitfield(uint32_t *src, int start, int len)
 {
-	if (start + len > 512 || len == 0 || len > 32)
+	uint8_t *sp;
+	uint32_t dst, mask;
+	int shift, bs, bc;
+
+	if (start < 0 || len < 0 || len > 32)
 		return 0;
 
-	src += start / 32;
-	start %= 32;
+	dst = 0;
+	mask = len % 32 ? UINT_MAX >> (32 - (len % 32)) : UINT_MAX;
+	shift = 0;
 
-	uint32_t dst = src[0] >> start;
-
-	if (((start + len - 1) / 32 != start / 32)) {
-		dst |= src[1] << (32 - start);
+	while (len > 0) {
+		sp = (uint8_t *)src + start / 8;
+		bs = start % 8;
+		bc = 8 - bs;
+		if (bc > len)
+			bc = len;
+		dst |= (*sp >> bs) << shift;
+		shift += bc;
+		start += bc;
+		len -= bc;
 	}
 
-	return dst & (__BIT(len) - 1);
+	dst &= mask;
+	return (int)dst;
 }

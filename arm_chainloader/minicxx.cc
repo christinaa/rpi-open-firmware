@@ -13,25 +13,22 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 FILE DESCRIPTION
-Panic routine.
+Crappy C++ runtime.
 
 =============================================================================*/
 
-#include <common.h>
-#include <cpu.h>
+#include <stdint.h>
+#include <chainloader.h>
+#include <hardware.h>
 
-#undef panic
+void* operator new[] (size_t sz) {
+	return malloc(sz);
+}
 
-void panic(const char* fmt,  ...) {
-	printf("panic(): ");
+void* operator new (size_t sz) {
+	return malloc(sz);
+}
 
-	va_list arp;
-
-	va_start(arp, fmt);
-	vprintf(fmt, arp);
-	va_end(arp);
-
-	putchar('\n');
-
-	hang_cpu();
+extern "C" void __cxa_pure_virtual() {
+	panic("__cxa_pure_virtual!");
 }

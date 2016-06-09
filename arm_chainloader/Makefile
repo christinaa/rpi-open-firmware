@@ -3,13 +3,21 @@ TARGET_ARM_CHAINLOADER = arm_chainloader.bin
 
 SRCS = \
 	start.s \
+	lib/arm_bcopy.s \
+	lib/arm_bzero.s \
+	lib/arm_locore.s \
 	drivers/uart.c \
 	drivers/cprman.cc \
 	drivers/fatfs/ff.c \
-	drivers/sdhost.cc \
+	drivers/sdhost_impl.cc \
+	drivers/mbr_disk.cc \
 	../lib/xprintf.c \
+	../lib/panic.c \
 	../lib/udelay.c \
+	../lib/tlsf/tlsf.c \
 	firmware_rendezvous.c \
+	minicxx.cc \
+	loader.cc \
 	main.c
 
 ARCH = armv6zk

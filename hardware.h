@@ -23,9 +23,11 @@ that are missing from the release. This is also used by ARM.
 #define VPU_KILL_COMMAND 0xAAAAFFFF
 
 #define VC4_PERIPH_BASE 0x7E000000
-#define ARM_PERIPH_BASE 0x20000000
+#define ARM_PERIPH_BASE 0x3F000000
 
 #define VC4_TO_ARM_PERIPH(addr) ((addr - VC4_PERIPH_BASE) + ARM_PERIPH_BASE)
+
+#define VC4_CPUID_BCM2709_PLUS 0x40
 
 #ifdef __arm__
 	#define HW_REGISTER_RW(addr) (*(volatile unsigned int *)(VC4_TO_ARM_PERIPH(addr)))  
@@ -44,6 +46,13 @@ that are missing from the release. This is also used by ARM.
  * this is not included by hardware_vc4.h
  */
 #include "bcm2708_chip/aux_io.h"
+#include "bcm2708_chip/testbus.h"
+
+#define RAM_SIZE_1GB 0
+#define RAM_SIZE_512MB 1
+#define RAM_SIZE_256MB 2
+#define RAM_SIZE_128MB 3
+#define RAM_SIZE_UNKNOWN 4
 
 /*
  * LPDDR mode registers.
@@ -52,6 +61,7 @@ that are missing from the release. This is also used by ARM.
 #define LPDDR2_MR_DEVICE_FEATURE_1 1
 #define LPDDR2_MR_DEVICE_FEATURE_2 2
 #define LPDDR2_MR_IO_CONFIG        3
+#define LPDDR2_MR_TEMPERATURE      4
 #define LPDDR2_MR_MANUFACTURER_ID  5
 #define LPDDR2_MR_REV_1            6
 #define LPDDR2_MR_REV_2            7

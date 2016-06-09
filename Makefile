@@ -12,8 +12,8 @@ SRCS = \
 	arm_loader.c \
 	arm_monitor.c \
 	trap.c \
-	lib/ee_printf.c \
-	panic.c \
+	lib/xprintf.c \
+	lib/panic.c \
 	lib/udelay.c \
 	lib/memcpy.c \
 	chainloader_inc.s

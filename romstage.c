@@ -17,8 +17,8 @@ VideoCoreIV first stage bootloader.
 
 =============================================================================*/
 
-#include "lib/common.h"
-#include "hardware.h"
+#include <common.h>
+#include <hardware.h>
 
 uint32_t g_CPUID;
 
@@ -146,6 +146,11 @@ void switch_vpu_to_pllc() {
 
 extern void sdram_init();
 extern void arm_init();
+extern void monitor_start();
+
+void print_crap() {
+	printf("TB_BOOT_OPT = 0x%X\n", TB_BOOT_OPT);
+}
 
 int _main(unsigned int cpuid, unsigned int load_address) {
 	switch_vpu_to_pllc();
@@ -169,6 +174,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	printf("CPUID    = 0x%X\n", cpuid);
 	printf("LoadAddr = 0x%X\n", load_address);
 
+	print_crap();
+
 	g_CPUID = cpuid;
 	
 	/* bring up SDRAM */
@@ -177,6 +184,9 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 
 	/* bring up ARM */
 	arm_init();
+
+	/* start vpu monitor */
+	monitor_start();
 
 	panic("main exiting!");
 }
