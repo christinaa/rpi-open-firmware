@@ -38,7 +38,7 @@ empty_space:
 .globl _start
 .align 2
 _start:
-	mov r0, cpuid
+        version r0
 	mov r5, r0
 
 	/* vectors */
@@ -77,7 +77,7 @@ _start:
 	mov r4, #492
 
 L_setup_hw_irq:
-	st r2, (r1)++
+	st r2, (r1++)
 	ble r1, r4, L_setup_hw_irq
 
 	/*
@@ -135,12 +135,12 @@ delayloop2:
  ************************************************************/
 
 .macro SaveRegsLower 
-	push r0-r5, lr
+	stm r0-r5, (--sp)
 .endm
 
 .macro SaveRegsUpper
-	push r6-r15
-	push r16-r23
+	stm r6-r15, (--sp)
+	stm r16-r23, (--sp)
 .endm
 
 .macro SaveRegsAll
@@ -184,8 +184,8 @@ fleh_irq:
 	bl sleh_irq
 
 return_from_exception:
-	pop r16-r23
-	pop r6-r15
-	pop r0-r15
-	ld lr, (sp)++
+	ldm r16-r23, (sp++)
+	ldm r6-r15, (sp++)
+	ldm r0-r15, (sp++)
+	ld lr, (sp++)
 	rti
