@@ -135,7 +135,7 @@ delayloop2:
  ************************************************************/
 
 .macro SaveRegsLower 
-	stm r0-r5, (--sp)
+	stm r0-r5, lr, (--sp)
 .endm
 
 .macro SaveRegsUpper
