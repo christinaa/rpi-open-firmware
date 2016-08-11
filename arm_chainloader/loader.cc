@@ -33,7 +33,7 @@ static const char* g_BootFiles32[] = {
 
 struct LoaderImpl {
 	inline bool file_exists(const char* path) {
-		return f_stat(path) == FR_OK;
+		return f_stat(path, NULL) == FR_OK;
 	}
 
 	bool read_file(const char* path, uintptr_t dest) {
