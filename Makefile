@@ -35,7 +35,8 @@ default: $(TARGET_BOOTCODE)
 
 OBJ := $(addprefix $(TARGET_BUILD_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
-CROSS_COMPILE = /Developer/vc4-toolchain/prefix/bin/vc4-elf-
+# the cross compiler should already be in your path
+CROSS_COMPILE = vc4-elf-
 CC = $(CROSS_COMPILE)gcc
 AS = $(CC)
 OBJCOPY = $(CROSS_COMPILE)objcopy

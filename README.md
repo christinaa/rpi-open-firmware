@@ -9,7 +9,7 @@ All Broadcom headers are licensed under 3-Clause BSD License while the rest of t
 
 ## Building
 
-You need Julian Brown's VC4 toolchain to build this (https://github.com/puppeh/vc4-toolchain) as well as a arm-none-eabi-toolchain. You can tweak the paths to it in CROSS_COMPILE in `Makefile` (for VC4) and for ARM in `arm_chainloader/Makefile`. After you've done it, run `buildall.sh` and you should have a blob in `build/bootcode.bin`. 
+You need Julian Brown's VC4 toolchain to build this (https://github.com/puppeh/vc4-toolchain) as well as a arm-none-eabi-toolchain. You can tweak the paths to it in CROSS_COMPILE in `Makefile` (for VC4) and for ARM in `arm_chainloader/Makefile`, although by default it assumes they are currently in your path. Contributors should not commit their personal paths. After you've done it, run `buildall.sh` and you should have a blob in `build/bootcode.bin`. 
 
 ## Technical Details
 The firmware is split into two parts, a VC4 part and and ARM part. The VC4 part initializes PLLC and moves VPU over to it, and then brings up UART. It then performs SDRAM initialization, making SDRAM available at `0xC0000000` (uncached alias). The ARM loader will do ARM initialization and then copy the ARM bootloader that's embedded in it to the alias. It will then map it to `0x0` in ARM's memory space and start ARM. The code under `arm_chainloader` is what will run on the ARM. 
