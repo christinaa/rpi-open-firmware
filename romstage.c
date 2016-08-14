@@ -182,9 +182,6 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	sdram_init();
 	printf("SDRAM initialization completed successfully!\n");
 
-        /* test software interrupts */
-        __asm__("swi 2");
-	
 	/* bring up ARM */
 	arm_init();
 

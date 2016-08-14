@@ -96,6 +96,13 @@ L_setup_hw_irq:
 	st r3, (r0)
 	mov r0, #IC1_VADDR
 	st r3, (r0)
+
+        /* unmask ARM interrupts */
+        mov r0, #(IC0_BASE + 0x10 + 24)
+        mov r1, #(IC1_BASE + 0x10 + 24)
+        mov r2, 0x07000000
+        st r2, (r0)
+        st r2, (r1)
         
         /* enable interrupts */
 	ei
