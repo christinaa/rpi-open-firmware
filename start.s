@@ -72,12 +72,15 @@ _start:
 	RegExceptionHandler breakpoint, #13
 	RegExceptionHandler unknown, #14
 
-	add r1, r3, #252
+	//add r1, r3, #252
+        add r1, r3, #128
 	lea r2, fleh_irq
-	mov r4, #492
+	//mov r4, #492
+        add r4, r3, #492
 
 L_setup_hw_irq:
-	st r2, (r1++)
+	st r2, (r1)
+        add r1, #4
 	ble r1, r4, L_setup_hw_irq
 
 	/*
@@ -93,12 +96,13 @@ L_setup_hw_irq:
 	st r3, (r0)
 	mov r0, #IC1_VADDR
 	st r3, (r0)
+        
+        /* enable interrupts */
+	ei
 
 	/* jump to C code */
 	mov r0, r5
 	lea r1, _start
-
-	ei
 
 	bl _main
 
@@ -135,7 +139,8 @@ delayloop2:
  ************************************************************/
 
 .macro SaveRegsLower 
-	stm r0-r5, lr, (--sp)
+        stm lr, (--sp)
+	stm r0-r5, (--sp)
 .endm
 
 .macro SaveRegsUpper
@@ -186,6 +191,6 @@ fleh_irq:
 return_from_exception:
 	ldm r16-r23, (sp++)
 	ldm r6-r15, (sp++)
-	ldm r0-r15, (sp++)
+	ldm r0-r5, (sp++)
 	ld lr, (sp++)
 	rti

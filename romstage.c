@@ -177,11 +177,14 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	print_crap();
 
 	g_CPUID = cpuid;
-	
+
 	/* bring up SDRAM */
 	sdram_init();
 	printf("SDRAM initialization completed successfully!\n");
 
+        /* test software interrupts */
+        __asm__("swi 2");
+	
 	/* bring up ARM */
 	arm_init();
 
