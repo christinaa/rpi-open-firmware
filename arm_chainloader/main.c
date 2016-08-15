@@ -38,6 +38,11 @@ void main() {
 	/* c++ runtime */
 	cxx_init();
 
+        /* poke the VPU */
+        printf("Poking the VPU..\n");
+        while( (mmio_read32(0x2000B898) & 0x80000000) != 0);
+        mmio_write32(0x2000B8A0, 0xA1755A01);
+
 	panic("Nothing else to do!");
 
 #if 0

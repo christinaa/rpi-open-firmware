@@ -27,5 +27,13 @@ void monitor_irq() {
 void monitor_start() {
 	printf("Starting IPC monitor ...\n");
 
-	__asm__ __volatile__ ("sleep" :::);
+        for(;;) {
+            for(unsigned int i = 0; i < 99999; ++i);
+            if( (mmio_read32(0x7E00B9B8) & 0x40000000) ) {
+                putchar('-');
+            } else {
+                putchar('!');
+            }
+        }
+//	__asm__ __volatile__ ("sleep" :::);
 }
