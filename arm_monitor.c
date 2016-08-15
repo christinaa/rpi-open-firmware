@@ -27,9 +27,13 @@ void monitor_irq() {
 void monitor_start() {
 	printf("Starting IPC monitor ...\n");
 
+        /* enable IRQ */
+        mmio_write32(0x7E00B9BC, 1);
+
         for(;;) {
             for(unsigned int i = 0; i < 99999; ++i);
-            if( (mmio_read32(0x7E00B9B8) & 0x40000000) ) {
+
+            if( (mmio_read32(0x7E00B9B8) & 0x40000000) == 0) {
                 putchar('-');
             } else {
                 putchar('!');

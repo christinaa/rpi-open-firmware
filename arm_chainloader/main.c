@@ -36,7 +36,7 @@ void main() {
 	heap_init();
 
 	/* c++ runtime */
-	cxx_init();
+	//cxx_init();
 
         /* poke the VPU */
         printf("Poking the VPU..\n");
