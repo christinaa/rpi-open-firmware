@@ -119,6 +119,9 @@ struct MbrImpl {
 		}
 
 		if (!validate_signature()) {
+                        /* poke the VPU */
+                        volatile unsigned int* mail = (volatile unsigned int*) 0x2000B8A0;
+                        while(1) *mail = 0xA1755A01;
 			panic("invalid master boot record signature (got 0x%x)", mbr->mbr_sig);
 		}
 
