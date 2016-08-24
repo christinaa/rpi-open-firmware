@@ -40,6 +40,10 @@ _start:
 	nop
 
 L_all_cores_start:
+        /* check CPU id */
+        mrc p15, 0, r0, c0, c0, 5
+        ands r0, #0x03
+        bne L_deadloop
 
 L_core0:
 	mov sp, #0x2000000
