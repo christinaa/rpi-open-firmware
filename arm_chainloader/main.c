@@ -33,11 +33,10 @@ static void heap_init() {
 void main() {
 	logf("Started on ARM, continuing boot from here ...\n", __FUNCTION__);
 
-	heap_init();
+        heap_init();
 
 	/* c++ runtime */
 	cxx_init();
-
 	panic("Nothing else to do!");
 
 #if 0
