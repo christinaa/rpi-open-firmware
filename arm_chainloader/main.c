@@ -36,7 +36,7 @@ void main() {
 	heap_init();
 
 	/* c++ runtime */
-	cxx_init();
+//	cxx_init();
 
         /* poke the VPU */
 /*        __asm__ volatile("mov r3, #0\n" \
@@ -45,6 +45,8 @@ void main() {
                          "mcr p15, 0, r3, C7, C14, 0\n" \
                          "mcr p15, 0, r3, C7, C10, 4\n" \
                          "mcr p15, 0, r3, C7, C10, 5\n");*/
+        printf("\nPoking the VPU....\n");
+        mmio_write32(0x3E00B8A0, 0xA1755A01);
 
 	panic("Nothing else to do!");
 
