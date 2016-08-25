@@ -18,8 +18,6 @@ The current iteration of ARM chainloader (which I've still yet to commit) can ac
 
 The current makefiles in the ARM part of it aim at **RPi1** (ie. ARMv6) but they can be changed to ARMv7 if you want to build it for a newer model. I tested it on all RPi models and it works without any issues as far as I can tell (ARM can access peripherals and memory just fine as AXI supervisor). However it cannot access any secure peripherals (OTP/SDRAM/etc) since they appear to be on a separate bus accessible only to VC4.
 
-**Beware:** This doesn't handle SMP at the moment so if you run this on RPi2 and above, all ARM cores will start executing the ARM bootloader code at the start which could cause problems. I will fix this soon.
-
 ## Issues/Fixes
  * PLL rate on ARM is slow, it's a bit annoying. Need to tweak the PLL rate later.
  * All SDRAM configurations (including 1GB work), however, I'm not certain whether they will be reliable or not . ARM detection works for all of the RPi models I got to test it on which was two RPi2s, 1 RPi1 and 1 RPi3.
