@@ -46,7 +46,7 @@ void main() {
                          "mcr p15, 0, r3, C7, C10, 4\n" \
                          "mcr p15, 0, r3, C7, C10, 5\n");*/
         printf("\nPoking the VPU....\n");
-        mmio_write32(0x3E00B8A0, 0xA1755A01);
+        mmio_write32(0x7E00B8A0, 0xA1755A01);
 
 	panic("Nothing else to do!");
 

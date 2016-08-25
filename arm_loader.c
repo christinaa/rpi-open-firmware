@@ -256,7 +256,7 @@ void arm_init() {
 	 * set the mem size for who knows what reason.
 	 */
 	ARM_CONTROL0 |= 0x008 | ARM_C0_APROTSYST | ARM_C0_SIZ1G | ARM_C0_FULLPERI;
-        //ARM_CONTROL1 |= ARM_C1_PERSON;
+        ARM_CONTROL1 |= ARM_C1_PERSON;
 
         ARM_IRQ_ENBL3 |= ARM_IE_MAIL;
 
