@@ -119,7 +119,7 @@ struct MbrImpl {
 		}
 
 		if (!validate_signature()) {
-                    			panic("invalid master boot record signature (got 0x%x)", mbr->mbr_sig);
+                        panic("invalid master boot record signature (got 0x%x)", mbr->mbr_sig);
 		}
 
 		logf("MBR contents:\n");
