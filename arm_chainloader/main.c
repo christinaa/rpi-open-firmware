@@ -35,8 +35,13 @@ void main() {
 
         heap_init();
 
+        /* poke the VPU */
+        printf("\nPoking the VPU....\n");
+        mmio_write32(0x7E00B8A0, 0xA1755A01);
+
 	/* c++ runtime */
 	cxx_init();
+
 	panic("Nothing else to do!");
 
 #if 0

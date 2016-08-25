@@ -71,13 +71,33 @@ _start:
 	RegExceptionHandler badl2alias, #12
 	RegExceptionHandler breakpoint, #13
 	RegExceptionHandler unknown, #14
+	RegExceptionHandler unknown, #15
+	RegExceptionHandler unknown, #16
+	RegExceptionHandler unknown, #17
+	RegExceptionHandler unknown, #18
+	RegExceptionHandler unknown, #19
+	RegExceptionHandler unknown, #20
+	RegExceptionHandler unknown, #21
+	RegExceptionHandler unknown, #22
+	RegExceptionHandler unknown, #23
+	RegExceptionHandler unknown, #24
+	RegExceptionHandler unknown, #25
+	RegExceptionHandler unknown, #26
+	RegExceptionHandler unknown, #27
+	RegExceptionHandler unknown, #28
+	RegExceptionHandler unknown, #29
+	RegExceptionHandler unknown, #30
+	RegExceptionHandler unknown, #31
 
-	add r1, r3, #252
+	//add r1, r3, #252
+        add r1, r3, #128
 	lea r2, fleh_irq
-	mov r4, #492
+	//mov r4, #492
+        add r4, r3, #492
 
 L_setup_hw_irq:
-	st r2, (r1++)
+	st r2, (r1)
+        add r1, #4
 	ble r1, r4, L_setup_hw_irq
 
 	/*
@@ -88,17 +108,33 @@ L_setup_hw_irq:
 	mov r28, #0x1D000 
 	mov sp, #0x1C000
 
+        /* unmask ARM interrupts */
+        mov r0, #(IC0_BASE + 0x10)
+        mov r1, #(IC1_BASE + 0x10)
+        mov r2, 0x11111111
+        mov r3, #(IC0_BASE + 0x10 + 0x20)
+
+    unmask_all:
+        st r2, (r0)
+        st r2, (r1)
+        add r0, 4
+        add r1, 4
+        ble r0, r3, unmask_all
+ 
 	/* set interrupt vector bases */
+	mov r3, #0x1B000
 	mov r0, #IC0_VADDR
 	st r3, (r0)
 	mov r0, #IC1_VADDR
 	st r3, (r0)
 
+
+        /* enable interrupts */
+	ei
+
 	/* jump to C code */
 	mov r0, r5
 	lea r1, _start
-
-	ei
 
 	bl _main
 
@@ -135,7 +171,8 @@ delayloop2:
  ************************************************************/
 
 .macro SaveRegsLower 
-	stm r0-r5, lr, (--sp)
+        stm lr, (--sp)
+	stm r0-r5, (--sp)
 .endm
 
 .macro SaveRegsUpper
@@ -186,6 +223,6 @@ fleh_irq:
 return_from_exception:
 	ldm r16-r23, (sp++)
 	ldm r6-r15, (sp++)
-	ldm r0-r15, (sp++)
+	ldm r0-r5, (sp++)
 	ld lr, (sp++)
 	rti

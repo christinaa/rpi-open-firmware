@@ -79,10 +79,12 @@ void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
 	);
 
 	printf("We are hanging here ...\n");
+        while(1) printf("Ahh!\n");
 	
 	hang_cpu();
 }
 
 void sleh_irq(vc4_saved_state_t* pcb) {
+        while(1) printf("Interrupt!\n");
 	panic("interrupt at 0x%X!", pcb->pc);
 }
