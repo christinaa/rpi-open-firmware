@@ -369,7 +369,7 @@ struct SdhostImpl : BlockDevice {
 			printf("    Capacity: %d\n", SD_CSD_V2_CAPACITY(csd));
 			printf("    Size    : %d\n", SD_CSD_V2_C_SIZE(csd));
 
-			block_length = 1 << SD_CSD_V2_BL_LEN;
+			block_length = SD_CSD_V2_BL_LEN;
 		}
 		else if (SD_CSD_CSDVER(csd) == SD_CSD_CSDVER_1_0) {
 			printf("    CSD     : Ver 1.0\n");
