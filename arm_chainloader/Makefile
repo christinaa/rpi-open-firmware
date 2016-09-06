@@ -3,6 +3,7 @@ TARGET_ARM_CHAINLOADER = arm_chainloader.bin
 
 SRCS = \
 	start.s \
+	boot.s \
 	lib/arm_bcopy.s \
 	lib/arm_bzero.s \
 	lib/arm_locore.s \

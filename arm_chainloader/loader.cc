@@ -88,18 +88,18 @@ struct LoaderImpl {
                 printf("DTB loaded at %X\n", dtb);
 
                 /* read the kernel */
-                uint8_t* bzImage;
+                uint8_t* zImage;
 
-                if(!read_file("bzImage", bzImage)) {
-                    panic("Error reading bzImage");
+                if(!read_file("zImage", zImage)) {
+                    panic("Error reading zImage");
                 }
 
-                printf("bzImage loaded at %X\n", bzImage);
+                printf("bzImage loaded at %X\n", zImage);
 
                 printf("Jumping to the Linux kernel...\n");
                 
                 /* this should never return */
-                bootLinux(0, 3139, dtb, bzImage);
+                bootLinux(0, 3139, dtb, zImage);
 	}
 };
 
