@@ -33,11 +33,13 @@ static void heap_init() {
 void main() {
 	logf("Started on ARM, continuing boot from here ...\n", __FUNCTION__);
 
-        heap_init();
+	heap_init();
 
-        /* poke the VPU */
-        printf("\nPoking the VPU....\n");
-        mmio_write32(0x7E00B8A0, 0xA1755A01);
+#if 0
+	/* poke the VPU */
+	logf("\nPoking the VPU....\n");
+	mmio_write32(0x7E00B8A0, 0xA1755A01);
+#endif
 
 	/* c++ runtime */
 	cxx_init();

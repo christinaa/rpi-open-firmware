@@ -25,7 +25,6 @@ Exception names are from the public release from:
 
 =============================================================================*/
 
-
 .text
 
 empty_space:
@@ -38,7 +37,7 @@ empty_space:
 .globl _start
 .align 2
 _start:
-        version r0
+		version r0
 	mov r5, r0
 
 	/* vectors */
@@ -54,7 +53,6 @@ _start:
 	st r2, (r1)
 	add r1, #4
 .endm
-
 
 	RegExceptionHandler zero, #0
 	RegExceptionHandler misaligned, #1
@@ -90,14 +88,14 @@ _start:
 	RegExceptionHandler unknown, #31
 
 	//add r1, r3, #252
-        add r1, r3, #128
+	add r1, r3, #128
 	lea r2, fleh_irq
 	//mov r4, #492
-        add r4, r3, #492
+	add r4, r3, #492
 
 L_setup_hw_irq:
 	st r2, (r1)
-        add r1, #4
+	add r1, #4
 	ble r1, r4, L_setup_hw_irq
 
 	/*
@@ -108,18 +106,18 @@ L_setup_hw_irq:
 	mov r28, #0x1D000 
 	mov sp, #0x1C000
 
-        /* unmask ARM interrupts */
-        mov r0, #(IC0_BASE + 0x10)
-        mov r1, #(IC1_BASE + 0x10)
-        mov r2, 0x11111111
-        mov r3, #(IC0_BASE + 0x10 + 0x20)
+	/* unmask ARM interrupts */
+	mov r0, #(IC0_BASE + 0x10)
+	mov r1, #(IC1_BASE + 0x10)
+	mov r2, 0x11111111
+	mov r3, #(IC0_BASE + 0x10 + 0x20)
 
-    unmask_all:
-        st r2, (r0)
-        st r2, (r1)
-        add r0, 4
-        add r1, 4
-        ble r0, r3, unmask_all
+unmask_all:
+	st r2, (r0)
+	st r2, (r1)
+	add r0, 4
+	add r1, 4
+	ble r0, r3, unmask_all
  
 	/* set interrupt vector bases */
 	mov r3, #0x1B000
@@ -128,8 +126,7 @@ L_setup_hw_irq:
 	mov r0, #IC1_VADDR
 	st r3, (r0)
 
-
-        /* enable interrupts */
+	/* enable interrupts */
 	ei
 
 	/* jump to C code */
@@ -171,7 +168,7 @@ delayloop2:
  ************************************************************/
 
 .macro SaveRegsLower 
-        stm lr, (--sp)
+		stm lr, (--sp)
 	stm r0-r5, (--sp)
 .endm
 
