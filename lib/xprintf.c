@@ -30,12 +30,20 @@ int putchar (int c)
 /* Put a null-terminated string                 */
 /*----------------------------------------------*/
 
-int puts (					/* Put a string to the default device */
+static int __puts (				/* Put a string to the default device */
 	const char* str				/* Pointer to the string */
 )
 {
 	while (*str)
 		putchar(*str++);
+}
+
+int puts (					/* Put a string to the default device */
+	const char* str				/* Pointer to the string */
+)
+{
+	__puts(str);
+	putchar('\n');
 }
 
 /*----------------------------------------------*/
@@ -93,7 +101,7 @@ int vprintf (
 			p = va_arg(arp, char*);
 			for (j = 0; p[j]; j++) ;
 			while (!(f & 2) && j++ < w) putchar(' ');
-			puts(p);
+			__puts(p);
 			while (j++ < w) putchar(' ');
 			continue;
 		case 'C' :					/* Character */

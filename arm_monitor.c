@@ -20,12 +20,26 @@ First stage monitor.
 #include <common.h>
 #include "hardware.h"
 
-void monitor_irq() {
-
+/*
+ * called from sleh_irq (trap.c)
+ */
+void arm_monitor_interrupt() {
+	printf("VPU MBOX rcv: 0x%X, cnf 0x%X\n",
+		ARM_1_MAIL1_RD,
+		ARM_1_MAIL1_CNF);
 }
 
 void monitor_start() {
 	printf("Starting IPC monitor ...\n");
 
-	__asm__ __volatile__ ("sleep" :::);
+	/* dump status */
+	printf("Mailbox status: 0x%X\n", ARM_1_MAIL1_STA);
+
+	/* enable IRQ */
+	ARM_1_MAIL1_CNF = ARM_MC_IHAVEDATAIRQEN;
+
+	for(;;) {
+		__asm__ __volatile__ ("sleep" :::);
+		printf("sleep interrupted!\n");
+	}
 }

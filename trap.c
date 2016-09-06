@@ -38,9 +38,7 @@ static const char* exception_name(uint32_t n) {
 	prefix " r12: 0x%08x r13: 0x%08x r14: 0x%08x r15: 0x%08x\n" \
 	prefix "  pc: 0x%08x  lr: 0x%08x  sr: 0x%08x\n"
 
-void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
-	printf("Fatal VPU Exception: %s\n", exception_name(n));
-
+static void print_vpu_state(vc4_saved_state_t* pcb) {
 	printf("VPU registers:\n");
 
 	printf(
@@ -66,7 +64,7 @@ void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
 		pcb->sr
 	);
 
-	printf("Exception info:\n");
+	printf("Exception info (IC0):\n");
 
 	printf(
 		"   src0: 0x%08x src1: 0x%08x vaddr: 0x%08x\n"
@@ -78,11 +76,42 @@ void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
 		IC0_S
 	);
 
+	printf("Exception info (IC1):\n");
+
+	printf(
+		"   src0: 0x%08x src1: 0x%08x vaddr: 0x%08x\n"
+		"      C: 0x%08x    S: 0x%08x\n",
+		IC1_SRC0,
+		IC1_SRC1,
+		IC1_VADDR,
+		IC1_C,
+		IC1_S
+	);
+}
+
+void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
+	printf("Fatal VPU Exception: %s\n", exception_name(n));
+
+	print_vpu_state(pcb);
+
 	printf("We are hanging here ...\n");
 	
 	hang_cpu();
 }
 
-void sleh_irq(vc4_saved_state_t* pcb) {
-	panic("interrupt at 0x%X!", pcb->pc);
+extern void arm_monitor_interrupt();
+
+void sleh_irq(vc4_saved_state_t* pcb, uint32_t tp) {
+	uint32_t status = IC0_S;
+	uint32_t source = status & 0xFF;
+
+	printf("VPU Received interrupt from source %d\n", source);
+
+	if (source == INTERRUPT_ARM) {
+		arm_monitor_interrupt();
+	}
+	else {
+		print_vpu_state(pcb);
+		panic("unknown interrupt source!");
+	}
 }

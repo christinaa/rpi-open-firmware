@@ -3,13 +3,10 @@
 #include <hardware.h>
 
 static inline void __attribute__((noreturn)) hang_cpu() {
-	/* disable interrupts and enter WFI state */
-	__asm__ __volatile__ (
-		"di\n"
-		"sleep\n"
-	);
+	/* disable interrupts  */
+	__asm__ __volatile__ ("di");
 
-	/* in case the above fails */
+	/* loop */
 	for (;;) {
 		__asm__ __volatile__ ("nop");
 	}

@@ -16,7 +16,9 @@ FILE DESCRIPTION
 ARM entry point.
 
 This is where all cores start. For RPi1, only one core starts so we can jump
-straight to the main bootloader. For later models,
+straight to the main bootloader. For later models, the first core jumps to the
+bootloader. The other cores wait until SMP is enabled by the kernel later in
+the boot process.
 
 =============================================================================*/
 
@@ -40,6 +42,13 @@ _start:
 	nop
 
 L_all_cores_start:
+        /* check CPU id */
+	mrc p15, 0, r0, c0, c0, 5	@ read MPIDR
+	and r3, r0, #0xc0000000		@ multiprocessing extensions and
+	teq r3, #0x80000000		@ not part of a uniprocessor system?
+	bne L_core0			@ no, assume UP
+	ands r0, r0, #0x03		@ CPU 0?
+	bne L_deadloop			@ if not, spin.
 
 L_core0:
 	mov sp, #0x2000000
