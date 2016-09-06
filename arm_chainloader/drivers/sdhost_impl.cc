@@ -42,6 +42,23 @@ SDHOST driver. This used to be known as ALTMMC.
 #define SDHSTS_CRC7_ERROR               0x10
 #define SDHSTS_FIFO_ERROR               0x08
 
+#define SDEDM_FSM_MASK           0xf
+#define SDEDM_FSM_IDENTMODE      0x0
+#define SDEDM_FSM_DATAMODE       0x1
+#define SDEDM_FSM_READDATA       0x2
+#define SDEDM_FSM_WRITEDATA      0x3
+#define SDEDM_FSM_READWAIT       0x4
+#define SDEDM_FSM_READCRC        0x5
+#define SDEDM_FSM_WRITECRC       0x6
+#define SDEDM_FSM_WRITEWAIT1     0x7
+#define SDEDM_FSM_POWERDOWN      0x8
+#define SDEDM_FSM_POWERUP        0x9
+#define SDEDM_FSM_WRITESTART1    0xa
+#define SDEDM_FSM_WRITESTART2    0xb
+#define SDEDM_FSM_GENPULSES      0xc
+#define SDEDM_FSM_WRITEWAIT2     0xd
+#define SDEDM_FSM_STARTPOWDOWN   0xf
+
 #define SDHSTS_TRANSFER_ERROR_MASK      (SDHSTS_CRC7_ERROR|SDHSTS_CRC16_ERROR|SDHSTS_REW_TIME_OUT|SDHSTS_FIFO_ERROR)
 #define SDHSTS_ERROR_MASK               (SDHSTS_CMD_TIME_OUT|SDHSTS_TRANSFER_ERROR_MASK)
 
@@ -189,7 +206,7 @@ struct SdhostImpl : BlockDevice {
 		wait_and_get_response();
 
 		/* set voltage */
-		t = MMC_OCR_3_2V_3_3V;
+		t = MMC_OCR_3_3V_3_4V;
 		if (r[0] == 0x1AA) {
 			t |= MMC_OCR_HCS;
 			is_sdhc = true;
@@ -197,8 +214,8 @@ struct SdhostImpl : BlockDevice {
 
 		/* query voltage and type */
 		for (;;) {
-			send(MMC_APP_CMD);
-			send(SD_APP_OP_COND, t);
+			send(MMC_APP_CMD); /* 55 */
+			send_no_resp(SD_APP_OP_COND, t);
 
 			if (!wait_and_get_response())
 				return false;
@@ -259,80 +276,115 @@ struct SdhostImpl : BlockDevice {
 		return true;
 	}
 
-	inline bool wait_for_data_xfer() {
-		for (int i = 0; i < 1000; i++) {
-			if (SH_HSTS & SH_HSTS_DATA_FLAG_SET) {
-				SH_HSTS = SH_HSTS_DATA_FLAG_SET;
-				return true;
-			}	
-			udelay(100);
+//#define DUMP_READ
+
+	bool wait_for_fifo_data(uint32_t timeout = 100000) {
+		uint32_t t = timeout;
+
+		while ((SH_HSTS & SH_HSTS_DATA_FLAG_SET) == 0) {
+			if (t == 0) {
+				putchar('\n');
+				logf("ERROR: no FIFO data, timed out after %dus!\n", timeout)
+				return false;
+			}
+			t--;
+			udelay(10);
 		}
-		return false;
+
+		return true;
 	}
 
-//#define DUMP_READ
+
+	void drain_fifo() {
+		/* fuck me with a rake ... genlty */
+
+		wait();
+
+		int i = 0;
+
+#ifdef DUMP_READ
+		logf("Draining FIFO ...\n");
+#endif
+
+		while (SH_HSTS & SH_HSTS_DATA_FLAG_SET) {
+			SH_DATA;
+			mfence();
+			i++;
+		}
+
+#ifdef DUMP_READ
+		logf("Drained %d words from the FIFO!\n", i);
+#endif
+	}
 
 	virtual bool read_block(uint32_t sector, uint32_t* buf) override {
 		if (!card_ready)
 			panic("card not ready");
 
-#ifdef DUMP_READ
-		logf("Reading %d bytes from sector %d ...\n", block_size, sector);
-#endif
-
 		if (!is_high_capacity)
 			sector <<= 9;
 
-		send_raw(MMC_READ_BLOCK_SINGLE | SH_CMD_READ_CMD_SET | SH_CMD_BUSY_CMD_SET, sector);
-		if (!wait()) {
-			return false;
-		}
+		/* drain junk from FIFO */
+		drain_fifo();
 
-		uint32_t remaining = block_size;
+		/* enter READ mode */
+		send_raw(MMC_READ_BLOCK_MULTIPLE | SH_CMD_READ_CMD_SET, sector);
+
+		int i;
+		uint32_t hsts_err = 0;
+
+#ifdef DUMP_READ
+		if (buf)
+			logf("Reading %d bytes from sector %d using FIFO ...\n", block_size, sector);
+#endif
 
 #ifdef DUMP_READ
 		printf("----------------------------------------------------\n");
 #endif
 
-		while (remaining) {
-			if (!wait_for_data_xfer()) {
-#ifdef DUMP_READ
-				putchar('\n');
-#endif
-				logf("ERROR: Timeout while reading block\n");
+		/* drain useful data from FIFO */
+		for (i = 0; i < 128; i++) {
+			/* wait for FIFO */
+			if (!wait_for_fifo_data()) {
 				break;
 			}
+
+			uint32_t hsts_err = SH_HSTS & SDHSTS_ERROR_MASK;
+			if (hsts_err) {
+				logf("ERROR: transfer error on FIFO word %d: 0x%x\n", i, SH_HSTS);
+				break;
+			}
+
+
+			volatile uint32_t data = SH_DATA;
 			
-			*buf = SH_DATA;
 #ifdef DUMP_READ
-			printf("%08x ", *buf);
+			printf("%08x ", data);
 #endif
-			buf++;
-			remaining -= 4;
+			if (buf)
+				*(buf++) = data;
 		}
 
+		send_raw(MMC_STOP_TRANSMISSION | SH_CMD_BUSY_CMD_SET);
+
 #ifdef DUMP_READ
-		printf("\n----------------------------------------------------\n");
+		if (buf)
+			printf("\n----------------------------------------------------\n");
 #endif
 
-		send(MMC_STOP_TRANSMISSION);
-
-		uint32_t sdhsts_errs = SH_HSTS & SDHSTS_ERROR_MASK;
-		if (sdhsts_errs) {
+		if (hsts_err) {
 			logf("ERROR: Transfer error, status: 0x%x\n", SH_HSTS);
-		}
-
-		if (remaining) {
-			logf("ERROR: Read failed, %d bytes left to copy\n", remaining);
 			return false;
 		}
-		else {
+
 #ifdef DUMP_READ
+		if (buf)
 			logf("Completed read for %d\n", sector);
 #endif
-			return true;
-		}
+		return true;
 	}
+
+
 
 	bool select_card() {
 		send(MMC_SELECT_CARD, MMC_ARG_RCA(rca));
@@ -347,7 +399,7 @@ struct SdhostImpl : BlockDevice {
 		char pnm[8];
 		uint32_t block_length;
 
-		send_no_resp(MMC_GO_IDLE_STATE | SH_CMD_NO_RESPONSE_SET);
+		send_no_resp(MMC_GO_IDLE_STATE);
 
 		if (!query_voltage_and_type()) {
 			logf("ERROR: Failed to query card voltage!\n");
@@ -369,7 +421,10 @@ struct SdhostImpl : BlockDevice {
 			printf("    Capacity: %d\n", SD_CSD_V2_CAPACITY(csd));
 			printf("    Size    : %d\n", SD_CSD_V2_C_SIZE(csd));
 
-			block_length = SD_CSD_V2_BL_LEN;
+			block_length = 1 << SD_CSD_V2_BL_LEN;
+
+			/* work out the capacity of the card in bytes */
+			capacity_bytes = (SD_CSD_V2_CAPACITY(csd) * block_length);
 		}
 		else if (SD_CSD_CSDVER(csd) == SD_CSD_CSDVER_1_0) {
 			printf("    CSD     : Ver 1.0\n");
@@ -377,18 +432,16 @@ struct SdhostImpl : BlockDevice {
 			printf("    Size    : %d\n", SD_CSD_C_SIZE(csd));
 
 			block_length = 1 << SD_CSD_READ_BL_LEN(csd);
+
+			/* work out the capacity of the card in bytes */
+			capacity_bytes = (SD_CSD_CAPACITY(csd) * block_length);	
 		}
 		else {
 			printf("ERROR: Unknown CSD version 0x%x!\n", SD_CSD_CSDVER(csd));
-
-
 			return false;
 		}
 	
 		printf("    BlockLen: 0x%x\n", block_length);
-
-		/* work out the capacity of the card in bytes */
-		capacity_bytes = (SD_CSD_CAPACITY(csd) * block_length);
 
 		if (!select_card()) {
 			logf("ERROR: Failed to select card!\n");
@@ -418,6 +471,12 @@ struct SdhostImpl : BlockDevice {
 	void restart_controller() {
 		is_sdhc = false;
 
+		logf("hcfg 0x%X, cdiv 0x%X, edm 0x%X, hsts 0x%X\n",
+			SH_HCFG,
+			SH_CDIV,
+			SH_EDM,
+			SH_HSTS);
+
 		logf("Restarting the eMMC controller ...\n");
 
 		configure_pinmux();
@@ -425,13 +484,22 @@ struct SdhostImpl : BlockDevice {
 
 		SH_HCFG &= ~SH_HCFG_WIDE_EXT_BUS_SET;
 		SH_HCFG = SH_HCFG_SLOW_CARD_SET | SH_HCFG_WIDE_INT_BUS_SET;
-		SH_CDIV = 0x96;
+		SH_CDIV = 0x148;
 
 		udelay(300);
 		mfence();
 
 		if (init_card()) {
 			card_ready = true;
+
+			/*
+			 * looks like a silicon bug to me or a quirk of csd2, who knows
+			 */
+			for (int i = 0; i < 3; i++) {
+				if (!read_block(0, nullptr)) {
+					panic("fifo flush cycle %d failed", i);
+				}
+			}
 		}
 		else {
 			panic("failed to reinitialize the eMMC controller");
