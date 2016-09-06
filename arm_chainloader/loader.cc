@@ -19,6 +19,7 @@ Second stage bootloader.
 
 #include <drivers/fatfs/ff.h>
 #include <chainloader.h>
+#include <drivers/mailbox.hpp>
 
 #define logf(fmt, ...) printf("[LDR:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
@@ -48,7 +49,7 @@ struct LoaderImpl {
 		}
 		logf("Boot partition mounted!\n");
 
-
+		g_Mailbox.write_word(0x1111);
 	}
 };
 

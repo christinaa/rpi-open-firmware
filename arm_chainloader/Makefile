@@ -11,6 +11,7 @@ SRCS = \
 	drivers/fatfs/ff.c \
 	drivers/sdhost_impl.cc \
 	drivers/mbr_disk.cc \
+	drivers/mailbox.cc \
 	../lib/xprintf.c \
 	../lib/panic.c \
 	../lib/udelay.c \

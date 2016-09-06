@@ -168,7 +168,7 @@ delayloop2:
  ************************************************************/
 
 .macro SaveRegsLower 
-		stm lr, (--sp)
+	stm lr, (--sp)
 	stm r0-r5, (--sp)
 .endm
 
@@ -215,6 +215,7 @@ fleh_irq:
 
 	/* top of savearea */
 	mov r0, sp
+	mov r1, r29
 	bl sleh_irq
 
 return_from_exception:
