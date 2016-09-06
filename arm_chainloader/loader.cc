@@ -27,6 +27,10 @@ FATFS g_BootVolumeFs;
 
 #define ROOT_VOLUME_PREFIX "0:"
 
+extern "C" {
+    void bootLinux(int zero, int machineID, void* dtb, void* kernel);
+}
+
 static const char* g_BootFiles32[] = {
 	"zImage",
 	"kernel.img",
@@ -37,8 +41,22 @@ struct LoaderImpl {
 		return f_stat(path, NULL) == FR_OK;
 	}
 
-	bool read_file(const char* path, uintptr_t dest) {
+	bool read_file(const char* path, uint8_t* dest) {
+            /* ensure file exists first */
+            if(!file_exists(path)) return false;
 
+            /* read entire file into buffer */
+            FIL* fp;
+            f_open(fp, path, FA_READ);
+
+            unsigned int len = f_size(fp);
+            dest = (uint8_t*) malloc(len);
+
+            f_read(fp, dest, len, &len);
+
+            f_close(fp);
+
+            return true;
 	}
 
 	LoaderImpl() {
@@ -49,7 +67,39 @@ struct LoaderImpl {
 		}
 		logf("Boot partition mounted!\n");
 
-		g_Mailbox.write_word(0x1111);
+                /* dump cmdline.txt for test */
+                uint8_t* arguments;
+
+                if(!read_file("cmdline.txt", arguments)) {
+                    panic("Error reading cmdline arguments");
+                }
+
+                printf("\n%s\n", arguments);
+
+                free(arguments);
+
+                /* read device tree blob */
+                uint8_t* dtb;
+
+                if(!read_file("rpi.dtb", dtb)) {
+                    panic("Error reading device tree blob");
+                }
+
+                printf("DTB loaded at %X\n", dtb);
+
+                /* read the kernel */
+                uint8_t* bzImage;
+
+                if(!read_file("bzImage", bzImage)) {
+                    panic("Error reading bzImage");
+                }
+
+                printf("bzImage loaded at %X\n", bzImage);
+
+                printf("Jumping to the Linux kernel...\n");
+                
+                /* this should never return */
+                bootLinux(0, 3139, dtb, bzImage);
 	}
 };
 
