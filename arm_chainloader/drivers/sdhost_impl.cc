@@ -294,27 +294,15 @@ struct SdhostImpl : BlockDevice {
 		return true;
 	}
 
-
 	void drain_fifo() {
-		/* fuck me with a rake ... genlty */
+		/* fuck me with a rake ... gently */
 
 		wait();
-
-		int i = 0;
-
-#ifdef DUMP_READ
-		logf("Draining FIFO ...\n");
-#endif
 
 		while (SH_HSTS & SH_HSTS_DATA_FLAG_SET) {
 			SH_DATA;
 			mfence();
-			i++;
 		}
-
-#ifdef DUMP_READ
-		logf("Drained %d words from the FIFO!\n", i);
-#endif
 	}
 
 	virtual bool read_block(uint32_t sector, uint32_t* buf) override {
@@ -339,7 +327,8 @@ struct SdhostImpl : BlockDevice {
 #endif
 
 #ifdef DUMP_READ
-		printf("----------------------------------------------------\n");
+		if (buf)
+			printf("----------------------------------------------------\n");
 #endif
 
 		/* drain useful data from FIFO */
