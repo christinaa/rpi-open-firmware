@@ -41,15 +41,18 @@ struct LoaderImpl {
             if(!file_exists(path)) return false;
 
             /* read entire file into buffer */
-            FIL* fp = NULL; /* initialized implicitly by f_open */
-            f_open(fp, path, FA_READ);
+            FIL fp; 
+            f_open(&fp, path, FA_READ);
 
-            unsigned int len = f_size(fp);
-            *dest = (uint8_t*) malloc(len);
+            unsigned int len = f_size(&fp);
+            uint8_t* buffer = (uint8_t*) malloc(len);
 
-            f_read(fp, *dest, len, &len);
+            printf("Buffer (%X) len %d\n", (unsigned int) buffer, len);
 
-            f_close(fp);
+            f_read(&fp, buffer, len, &len);
+            f_close(&fp);
+
+            *dest = buffer;
 
             return true;
 	}
