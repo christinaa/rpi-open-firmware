@@ -22,6 +22,8 @@ the boot process.
 
 =============================================================================*/
 
+#include "memory_map.h"
+
 .text
 .globl _start
 _start:
@@ -51,7 +53,7 @@ L_all_cores_start:
 	bne L_deadloop			@ if not, spin.
 
 L_core0:
-	mov sp, #0x2000000
+	mov sp, #(MEM_STACK_END)
 	b _firmware_rendezvous
 
 L_deadloop:

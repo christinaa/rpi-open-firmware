@@ -11,9 +11,7 @@ However, it's kind of ugly to do it in inline asm.. so here
    r3: kernel address
    */
 
-.globl bootLinux
-bootLinux:
-    //cli /* TODO: figure out how to disable interrupts correctly */
-
+.globl boot_linux
+boot_linux:
     /* jump to kernel */
     mov pc, r3

@@ -22,8 +22,8 @@ static void cxx_init() {
 }
 
 static void heap_init() {
-	void* start_of_heap = (void*)&_end;
-	size_t hs = 0x100000;
+	void* start_of_heap = (void*)MEM_HEAP_START;
+	size_t hs = MEM_HEAP_SIZE;
 
 	logf("Initializing heap at 0x%x with size 0x%x\n", start_of_heap, hs);
 
@@ -31,15 +31,9 @@ static void heap_init() {
 }
 
 void main() {
-	logf("Started on ARM, continuing boot from here ...\n", __FUNCTION__);
+	logf("Started on ARM, continuing boot from here ...\n");
 
 	heap_init();
-
-#if 0
-	/* poke the VPU */
-	logf("\nPoking the VPU....\n");
-	mmio_write32(0x7E00B8A0, 0xA1755A01);
-#endif
 
 	/* c++ runtime */
 	cxx_init();

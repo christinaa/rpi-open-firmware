@@ -5,6 +5,7 @@
 #include <lib/panic.h>
 #include <lib/xprintf.h>
 #include <lib/tlsf/tlsf.h>
+#include <memory_map.h>
 
 #ifdef __cplusplus
 extern "C" {
