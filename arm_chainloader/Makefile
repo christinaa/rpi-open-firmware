@@ -45,7 +45,7 @@ CXX = $(CROSS_COMPILE)gcc
 AS = $(CC)
 OBJCOPY = $(CROSS_COMPILE)objcopy
 LINKFLAGS = -nostdlib -march=$(ARCH) -Wl,--build-id=none -T linker.lds
-COMMON_FLAGS = -c -nostdlib -nostartfiles -ffreestanding -march=$(ARCH) -I../ -I./ -mfpu=vfp -mfloat-abi=hard -mtune=arm1176jzf-s
+COMMON_FLAGS = -c -nostdlib -nostartfiles -ffreestanding -march=$(ARCH) -I../ -I./ -mfpu=vfp -mfloat-abi=hard -mtune=arm1176jzf-s -Wall -Wextra
 CFLAGS = $(COMMON_FLAGS) -std=c11 
 CXXFLAGS = $(COMMON_FLAGS) -std=c++11 -fno-exceptions -fno-rtti
 ASFLAGS = $(COMMON_FLAGS) -x assembler-with-cpp
