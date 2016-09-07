@@ -36,7 +36,7 @@ struct LoaderImpl {
 		return f_stat(path, NULL) == FR_OK;
 	}
 
-	bool read_file(const char* path, uint8_t** dest) {
+	bool read_file(const char* path, uint8_t** dest, bool shouldAlloc) {
             /* ensure file exists first */
             if(!file_exists(path)) return false;
 
@@ -45,14 +45,17 @@ struct LoaderImpl {
             f_open(&fp, path, FA_READ);
 
             unsigned int len = f_size(&fp);
-            uint8_t* buffer = (uint8_t*) malloc(len);
 
-            printf("Buffer (%X) len %d\n", (unsigned int) buffer, len);
+            if(shouldAlloc) {
+                uint8_t* buffer = (uint8_t*) malloc(len);
+                printf("Buffer (%X) len %d\n", (unsigned int) buffer, len);
+                *dest = buffer;
+            } else {
+                printf("Reading %d to %X\n", len, *dest);
+            }
 
-            f_read(&fp, buffer, len, &len);
+            f_read(&fp, *dest, len, &len);
             f_close(&fp);
-
-            *dest = buffer;
 
             return true;
 	}
@@ -68,7 +71,7 @@ struct LoaderImpl {
                 /* dump cmdline.txt for test */
                 uint8_t* arguments;
 
-                if(!read_file("cmdline.txt", &arguments)) {
+                if(!read_file("cmdline.txt", &arguments, true)) {
                     panic("Error reading cmdline arguments");
                 }
 
@@ -79,16 +82,16 @@ struct LoaderImpl {
                 /* read device tree blob */
                 uint8_t* dtb;
 
-                if(!read_file("rpi.dtb", &dtb)) {
+                if(!read_file("rpi.dtb", &dtb, true)) {
                     panic("Error reading device tree blob");
                 }
 
                 printf("DTB loaded at %X\n", (unsigned int) dtb);
 
-                /* read the kernel */
-                uint8_t* zImage;
+                /* read the kernel -- necessarily at fixed address */
+                uint8_t* zImage = (uint8_t*) 0x8000;
 
-                if(!read_file("zImage", &zImage)) {
+                if(!read_file("zImage", &zImage, false)) {
                     panic("Error reading zImage");
                 }
 
