@@ -26,7 +26,7 @@
 	
 	.globl memcpy
 	.globl bcopy
-	.globl _memmove
+	.globl memmove
 
 bcopy:		/* void bcopy(const void *src, void *dest, size_t len); */
 	mov		r3, r0
