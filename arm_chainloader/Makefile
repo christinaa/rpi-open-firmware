@@ -7,8 +7,16 @@ SRCS = \
 	lib/arm_bcopy.s \
 	lib/arm_bzero.s \
 	lib/arm_locore.s \
+	lib/arm_strlen.s \
+	lib/arm_memcmp.s \
+	lib/string_misc.c \
 	drivers/uart.c \
 	drivers/cprman.cc \
+	drivers/libfdt/fdt.c \
+	drivers/libfdt/fdt_ro.c \
+	drivers/libfdt/fdt_wip.c \
+	drivers/libfdt/fdt_rw.c \
+	drivers/libfdt/fdt_strerror.c \
 	drivers/fatfs/ff.c \
 	drivers/sdhost_impl.cc \
 	drivers/mbr_disk.cc \
@@ -45,7 +53,9 @@ CXX = $(CROSS_COMPILE)gcc
 AS = $(CC)
 OBJCOPY = $(CROSS_COMPILE)objcopy
 LINKFLAGS = -nostdlib -march=$(ARCH) -Wl,--build-id=none -T linker.lds
-COMMON_FLAGS = -c -nostdlib -nostartfiles -ffreestanding -march=$(ARCH) -I../ -I./ -mfpu=vfp -mfloat-abi=hard -mtune=arm1176jzf-s -Wall -Wextra
+COMMON_FLAGS = -c -nostdlib -nostartfiles -ffreestanding -march=$(ARCH) -I../ -I./ -I./drivers/libfdt/ \
+ -mfpu=vfp -mfloat-abi=hard -mtune=arm1176jzf-s
+
 CFLAGS = $(COMMON_FLAGS) -std=c11 
 CXXFLAGS = $(COMMON_FLAGS) -std=c++11 -fno-exceptions -fno-rtti
 ASFLAGS = $(COMMON_FLAGS) -x assembler-with-cpp
