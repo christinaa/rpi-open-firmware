@@ -41,7 +41,7 @@ struct LoaderImpl {
 		return f_stat(path, NULL) == FR_OK;
 	}
 
-	bool read_file(const char* path, uint8_t* dest) {
+	bool read_file(const char* path, uint8_t** dest) {
             /* ensure file exists first */
             if(!file_exists(path)) return false;
 
@@ -50,9 +50,9 @@ struct LoaderImpl {
             f_open(fp, path, FA_READ);
 
             unsigned int len = f_size(fp);
-            dest = (uint8_t*) malloc(len);
+            *dest = (uint8_t*) malloc(len);
 
-            f_read(fp, dest, len, &len);
+            f_read(fp, *dest, len, &len);
 
             f_close(fp);
 
@@ -70,7 +70,7 @@ struct LoaderImpl {
                 /* dump cmdline.txt for test */
                 uint8_t* arguments;
 
-                if(!read_file("cmdline.txt", arguments)) {
+                if(!read_file("cmdline.txt", &arguments)) {
                     panic("Error reading cmdline arguments");
                 }
 
@@ -81,7 +81,7 @@ struct LoaderImpl {
                 /* read device tree blob */
                 uint8_t* dtb;
 
-                if(!read_file("rpi.dtb", dtb)) {
+                if(!read_file("rpi.dtb", &dtb)) {
                     panic("Error reading device tree blob");
                 }
 
@@ -90,7 +90,7 @@ struct LoaderImpl {
                 /* read the kernel */
                 uint8_t* zImage;
 
-                if(!read_file("zImage", zImage)) {
+                if(!read_file("zImage", &zImage)) {
                     panic("Error reading zImage");
                 }
 
