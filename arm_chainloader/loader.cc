@@ -82,10 +82,16 @@ struct LoaderImpl {
 			panic("error reading fdt");
 		}
 
-		int res = fdt_check_header(reinterpret_cast<void*>(fdt));
-		if (res != 0) {
+                void* v_fdt = reinterpret_cast<void*>(fdt);
+
+                int res;
+
+		if ((res = fdt_check_header(v_fdt)) != 0) {
 			panic("fdt blob invalid, fdt_check_header returned %d", res);
 		}
+
+                /* pass in command line args */
+                fdt_setprop(v_fdt, 0, "chosen/cmdline", cmdline, strlen((char*) cmdline));
 
 		logf("valid fdt loaded at 0x%X\n", (unsigned int)fdt);
 
