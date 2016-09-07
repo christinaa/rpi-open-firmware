@@ -31,11 +31,6 @@ extern "C" {
     void bootLinux(int zero, int machineID, void* dtb, void* kernel);
 }
 
-static const char* g_BootFiles32[] = {
-	"zImage",
-	"kernel.img",
-};
-
 struct LoaderImpl {
 	inline bool file_exists(const char* path) {
 		return f_stat(path, NULL) == FR_OK;
@@ -46,7 +41,7 @@ struct LoaderImpl {
             if(!file_exists(path)) return false;
 
             /* read entire file into buffer */
-            FIL* fp;
+            FIL* fp = NULL; /* initialized implicitly by f_open */
             f_open(fp, path, FA_READ);
 
             unsigned int len = f_size(fp);
@@ -85,7 +80,7 @@ struct LoaderImpl {
                     panic("Error reading device tree blob");
                 }
 
-                printf("DTB loaded at %X\n", dtb);
+                printf("DTB loaded at %X\n", (unsigned int) dtb);
 
                 /* read the kernel */
                 uint8_t* zImage;
@@ -94,7 +89,7 @@ struct LoaderImpl {
                     panic("Error reading zImage");
                 }
 
-                printf("bzImage loaded at %X\n", zImage);
+                printf("bzImage loaded at %X\n", (unsigned int) zImage);
 
                 printf("Jumping to the Linux kernel...\n");
                 
