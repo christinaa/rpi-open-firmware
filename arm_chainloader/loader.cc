@@ -90,8 +90,16 @@ struct LoaderImpl {
 			panic("fdt blob invalid, fdt_check_header returned %d", res);
 		}
 
-                /* pass in command line args */
-                fdt_setprop(v_fdt, 0, "chosen/cmdline", cmdline, strlen((char*) cmdline));
+		/* pass in command line args */
+		res = fdt_open_into(v_fdt, v_fdt, sz + 4096);
+		logf("fdt_open_into(): %d\n", res);
+
+		int node = fdt_path_offset(v_fdt, "/chosen");
+		logf("/chosen node: %d\n", node);
+		if (node < 0)
+			return NULL;
+		res = fdt_setprop(v_fdt, node, "bootargs", cmdline, strlen((char*) cmdline) + 1);
+		logf("fdt_setprop(): %d\n", res);
 
 		logf("valid fdt loaded at 0x%X\n", (unsigned int)fdt);
 
