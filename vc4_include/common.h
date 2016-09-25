@@ -1,5 +1,6 @@
 #pragma once
 
+#include <setjmp.h>
 #include "../lib/stdarg.h"
 
 typedef unsigned long long u64;
@@ -49,3 +50,6 @@ extern int putchar(int c);
 extern int vprintf(const char* fmt, va_list arp);
 extern int printf(const char *fmt, ...);
 extern int puts(const char* str);
+
+#define TESTHARNESS_ONLY
+extern jmp_buf restart_shell;

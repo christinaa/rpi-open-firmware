@@ -31,10 +31,26 @@ void uart_putc(unsigned int ch)
 	mmio_write32(AUX_MU_IO_REG, ch);
 }
 
+static int uart_data_available(void)
+{
+  int havedata = mmio_read32(AUX_MU_LSR_REG);
+  return havedata & 1;
+}
+
+static unsigned char uart_getc(void)
+{
+  while (!uart_data_available ())
+    /* empty */;
+
+  return mmio_read32(AUX_MU_IO_REG);
+}
+
 void uart_init(void) {
 	unsigned int ra = GP_FSEL1;
 	ra &= ~(7 << 12);
 	ra |= 2 << 12;
+        ra &= ~(7 << 15);
+        ra |= 2 << 15;
 	GP_FSEL1 = ra;
 
 	GP_PUD = 0;
@@ -42,6 +58,7 @@ void uart_init(void) {
 	udelay(150);
 	GP_PUDCLK0 = (1 << 14) | (1 << 15);
 	udelay(150);
+
 	GP_PUDCLK0 = 0;
 
 	mmio_write32(AUX_ENABLES, 1);
@@ -152,6 +169,140 @@ void print_crap() {
 	printf("TB_BOOT_OPT = 0x%X\n", TB_BOOT_OPT);
 }
 
+static unsigned crc16(unsigned crc, unsigned ch) {
+  crc ^= ch << 8;
+  for (unsigned j = 0; j < 8; j++)
+    if (crc & 0x8000)
+      crc = (crc << 1) ^ 0x1021;
+    else
+      crc <<= 1;
+  return crc;
+}
+
+static void eat_bad_data(void)
+{
+  const int max_repeats = 10000000;
+  while (1) {
+    int repeat;
+    for (repeat = 0; repeat < max_repeats; repeat++)
+      if (uart_data_available())
+        break;
+    if (repeat == max_repeats)
+      break;
+    uart_getc();
+  }
+}
+
+#ifdef TESTHARNESS_ONLY
+static int xmodem_receive(unsigned int startaddr) {
+  unsigned char *out = (unsigned char *) startaddr;
+  unsigned char *packet_start = out;
+  unsigned int expect_packet = 1;
+  unsigned int crc = 0;
+  unsigned int crc_mismatches = 0;
+  unsigned int block_mismatches = 0;
+  unsigned int last_seq, last_invseq;
+  unsigned int last_sender_crc;
+  unsigned int bad_commands = 0;
+  unsigned int acks_sent = 0;
+  int have_first_packet = false;
+
+  eat_bad_data();
+
+  while (1) {
+
+    if (!have_first_packet) {
+      // Send initial NAK
+      uart_putc('C');
+      while (!uart_data_available()) {
+        const int max_repeats = 10000000;
+        int repeat;
+        for (repeat = 0; repeat < max_repeats; repeat++)
+          if (uart_data_available()) 
+            break;
+        if (repeat == max_repeats)
+          uart_putc('C');
+      }
+    }
+
+    // Get a packet
+    unsigned int firstbyte = uart_getc(), i;
+    if (firstbyte == 1 || firstbyte == 2) {
+      int blocklen = firstbyte == 1 ? 128 : 1024;
+      crc = 0;
+      unsigned int seqno = uart_getc();
+      unsigned int inv_seqno = uart_getc();
+      last_seq = seqno;
+      last_invseq = inv_seqno;
+      out = packet_start;
+      for (i = 0; i < blocklen; i++) {
+        int ch = uart_getc();
+        *out++ = ch;
+        crc = crc16(crc, ch);
+      }
+      // skip these bytes.
+      unsigned int sender_crc_hi = uart_getc();
+      unsigned int sender_crc_lo = uart_getc();
+      unsigned int sender_crc = (sender_crc_hi << 8) | sender_crc_lo;
+      last_sender_crc = sender_crc;
+      if (sender_crc == (crc & 0xffff)
+          && expect_packet == seqno
+          && expect_packet == (inv_seqno ^ 0xff)) {
+        uart_putc(6); // ack
+        expect_packet = (expect_packet + 1) & 0xff;
+        packet_start += blocklen;
+        acks_sent++;
+      } else {
+        if (sender_crc != (crc & 0xffff))
+          crc_mismatches++;
+        if (expect_packet != seqno
+            || expect_packet != (inv_seqno ^ 0xff))
+          block_mismatches++;
+        uart_putc(21); // nak
+      }
+      // Either a good or a bad one...
+      have_first_packet = true;
+    } else if (firstbyte == 4) {
+      // Send ACK on EOT.
+      uart_putc(6);
+      break;
+    } else {
+      bad_commands++;
+      eat_bad_data();
+      if (have_first_packet)
+        uart_putc(21);
+    }
+  }
+
+  if (crc_mismatches || block_mismatches) {
+    printf("*** crc mismatches: %d\n", crc_mismatches);
+    printf("*** block mismatches: %d\n", block_mismatches);
+    printf("*** last seq: %d\n", last_seq);
+    printf("*** last inv seq: %d\n", last_invseq);
+    printf("*** expected packet: %d\n", expect_packet);
+    printf("*** last crc: %x\n", crc & 0xffff);
+    printf("*** last sender crc: %x\n", (int)last_sender_crc);
+    printf("*** bad commands: %d\n", bad_commands);
+    printf("*** acks sent: %d\n", acks_sent);
+  }
+
+  return 1;
+}
+
+jmp_buf restart_shell;
+
+static void return_from_code(void) {
+  longjmp(restart_shell, 1);
+}
+
+typedef void (*fn_returner)(void);
+
+static int run_code(unsigned int startaddr) {
+  int (*fn)(fn_returner) = (int (*)(fn_returner)) startaddr;
+  return fn(return_from_code);
+}
+#endif
+
 int _main(unsigned int cpuid, unsigned int load_address) {
 	switch_vpu_to_pllc();
 
@@ -182,6 +333,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	sdram_init();
 	printf("SDRAM initialization completed successfully!\n");
 
+#ifndef TESTHARNESS_ONLY
 	/* bring up ARM */
 	arm_init();
 
@@ -189,5 +341,60 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	monitor_start();
 
 	panic("main exiting!");
+#else
+        switch (setjmp(restart_shell)) {
+          case 0:
+            printf(">>> Test harness starting\n");
+            break;
+          case 1:
+            printf(">>> Test harness restarting after exception\n");
+            break;
+          case 2:
+            printf(">>> Test harness restarting after program return\n");
+            break;
+        }
+
+        while (1) {
+          int ch = uart_getc();
+          switch (ch) {
+            case 'L':
+              {
+                printf("Receive file by XMODEM.\n");
+                int success = xmodem_receive(0xc0000000);
+                if (success)
+                  printf("Success!\n");
+                else
+                  printf("Tranfer failed.\n");
+              }
+              break;
+            case 'G':
+              {
+                int rc;
+                char *targ = (char *) 0xc0000000;
+                if (targ[0] == 0x19
+                    && targ[1] == 0xe8
+                    && targ[2] == 0xfc
+                    && targ[3] == 0xff
+                    && targ[4] == 0xff
+                    && targ[5] == 0x0f) {
+                  printf("Signature looks OK, starting program!\n");
+                  rc = run_code(0xc0000000);
+                  printf("Program returned directly (%d)\n", rc);
+                  /* Probably register state is all screwed up, so do a
+                     longjmp.  */
+                  longjmp(restart_shell, 2);
+                } else {
+                  printf("Signature looks bad, doing nothing.\n");
+                }
+              }
+              break;
+            case '?':
+              printf ("OK.\n");
+              break;
+            default:
+              printf ("Unknown command: '%c'\n", ch);
+          }
+        }
+#endif
 }
 

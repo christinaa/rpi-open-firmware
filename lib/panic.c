@@ -37,5 +37,9 @@ void panic(const char* fmt,  ...) {
 
 	putchar('\n');
 
+#ifdef TESTHARNESS_ONLY
+        longjmp(restart_shell, 1);
+#else
 	hang_cpu();
+#endif
 }

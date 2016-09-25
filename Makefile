@@ -16,6 +16,8 @@ SRCS = \
 	lib/panic.c \
 	lib/udelay.c \
 	lib/memcpy.c \
+	lib/setjmp.S \
+	lib/longjmp.S \
 	chainloader_inc.s
 
 ARCH = vc4

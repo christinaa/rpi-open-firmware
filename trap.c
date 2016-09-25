@@ -94,9 +94,13 @@ void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
 
 	print_vpu_state(pcb);
 
+#ifdef TESTHARNESS_ONLY
+        longjmp(restart_shell, 1);
+#else
 	printf("We are hanging here ...\n");
 	
 	hang_cpu();
+#endif
 }
 
 extern void arm_monitor_interrupt();
