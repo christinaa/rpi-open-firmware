@@ -26,6 +26,7 @@ typedef int bool;
 #define NULL ((void*)0)
 
 typedef uint32_t size_t;
+typedef uint32_t intptr_t;
 
 # define ALWAYS_INLINE __attribute__((always_inline)) inline
 

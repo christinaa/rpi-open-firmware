@@ -19,6 +19,7 @@ VideoCoreIV first stage bootloader.
 
 #include <common.h>
 #include <hardware.h>
+#include <cachectrl.h>
 
 uint32_t g_CPUID;
 
@@ -292,7 +293,7 @@ static int xmodem_receive(unsigned int startaddr) {
 jmp_buf restart_shell;
 
 static void return_from_code(void) {
-  longjmp(restart_shell, 1);
+  longjmp(restart_shell, 2);
 }
 
 typedef void (*fn_returner)(void);
@@ -371,12 +372,13 @@ int _main(unsigned int cpuid, unsigned int load_address) {
               {
                 int rc;
                 char *targ = (char *) 0xc0000000;
+                cachectrl_flush(CACHECTRL_L1_DATA);
                 if (targ[0] == 0x19
                     && targ[1] == 0xe8
                     && targ[2] == 0xfc
                     && targ[3] == 0xff
                     && targ[4] == 0xff
-                    && targ[5] == 0x0f) {
+                    && (targ[5] == 0xcf || targ[5] == 0x0f)) {
                   printf("Signature looks OK, starting program!\n");
                   rc = run_code(0xc0000000);
                   printf("Program returned directly (%d)\n", rc);

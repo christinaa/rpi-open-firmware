@@ -7,6 +7,7 @@ TARGET_BOOTCODE = bootcode.bin
 # 
 SRCS = \
 	start.s \
+	cachectrl.c \
 	romstage.c \
 	sdram.c \
 	arm_loader.c \
