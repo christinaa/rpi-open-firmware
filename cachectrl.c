@@ -83,9 +83,9 @@ static void cachectrl_range_op(unsigned flags, void *lo, size_t len,
         if (flags & CACHECTRL_L1_INSN) {
                 uint32_t tmp1, tmp2;
                 if (flags & CACHECTRL_IC0)
-                        L1_IC0_CONTROL |= L1_IC0_CONTROL_DISABLE_SET;
+                        L1_IC0_CONTROL |= L1_IC0_CONTROL_START_FLUSH_SET;
                 if (flags & CACHECTRL_IC1)
-                        L1_IC1_CONTROL |= L1_IC1_CONTROL_DISABLE_SET;
+                        L1_IC1_CONTROL |= L1_IC1_CONTROL_START_FLUSH_SET;
                 tmp1 = L1_IC0_CONTROL;
                 tmp2 = L1_IC1_CONTROL;
                 tmp1 += tmp2;
