@@ -89,13 +89,16 @@ static void print_vpu_state(vc4_saved_state_t* pcb) {
 	);
 }
 
+__attribute__((noreturn))
+extern void do_exception_recovery(vc4_saved_state_t *);
+
 void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
 	printf("Fatal VPU Exception: %s\n", exception_name(n));
 
 	print_vpu_state(pcb);
 
 #ifdef TESTHARNESS_ONLY
-        longjmp(restart_shell, 1);
+        do_exception_recovery(pcb);
 #else
 	printf("We are hanging here ...\n");
 	

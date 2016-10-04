@@ -20,6 +20,7 @@ VideoCoreIV first stage bootloader.
 #include <common.h>
 #include <hardware.h>
 #include <cachectrl.h>
+#include <cpu.h>
 
 uint32_t g_CPUID;
 
@@ -290,7 +291,9 @@ static int xmodem_receive(unsigned int startaddr) {
   return 1;
 }
 
+bool have_restart_point = false;
 jmp_buf restart_shell;
+jmp_buf postcopy_catcher;
 
 static void return_from_code(void) {
   longjmp(restart_shell, 2);
@@ -300,8 +303,24 @@ typedef void (*fn_returner)(void);
 
 static int run_code(unsigned int startaddr) {
   int (*fn)(fn_returner) = (int (*)(fn_returner)) startaddr;
-  return fn(return_from_code);
+  return fn(&return_from_code);
 }
+
+__attribute__((noinline)) static void *where_are_we(void) {
+  return __builtin_return_address(0);
+}
+
+void exception_recover(void) {
+  if (have_restart_point)
+    longjmp(restart_shell, 1);
+
+  printf("No recovery point! Hanging now.\n");
+
+  hang_cpu();
+}
+
+#define LOAD_BASE 0x20000
+
 #endif
 
 int _main(unsigned int cpuid, unsigned int load_address) {
@@ -343,9 +362,40 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 
 	panic("main exiting!");
 #else
+        printf("Attempting relocation...\n");
+        switch (setjmp(postcopy_catcher)) {
+          case 0:
+            /* Copy boot code to start at 0xc0000000 + 128k.  */
+            postcopy_catcher[26] += 0x40000000 + 128 * 1024;
+            memcpy((void *) (0xc0000000 + 128 * 1024), (void *) 0x80000000,
+                   128 * 1024);
+            cachectrl_flush(CACHECTRL_L1_DATA);
+            cachectrl_invalidate_range(CACHECTRL_L1_INSN,
+                                       (void*) (0xc0000000 + 128 * 1024),
+                                       128 * 1024);
+            longjmp(postcopy_catcher, 1);
+          case 1:
+            printf("Middle state from uncached SDRAM: continue from 0x%x\n",
+                   (int) where_are_we());
+            /* Now we're running from the uncached alias, we can turn on L2
+               cache safely.  */
+            cachectrl_enable(CACHECTRL_IC0 | CACHECTRL_DC0 | CACHECTRL_L2);
+            postcopy_catcher[26] -= 0xc0000000 + 128 * 1024;
+            /* ...and copy the boot code back to where it's supposed to be.  */
+            memcpy((void *) 0, (void *) (0xc0000000 + 128 * 1024), 128 * 1024);
+            cachectrl_flush(CACHECTRL_L1_DATA);
+            cachectrl_invalidate_range(CACHECTRL_L1_INSN, (void*) 0,
+                                       128 * 1024);
+            longjmp(postcopy_catcher, 2);
+          case 2:
+            printf("Successfully relocated boot code! (Continuing from 0x%x)\n",
+                   (int) where_are_we());
+        }
+
         switch (setjmp(restart_shell)) {
           case 0:
             printf(">>> Test harness starting\n");
+            have_restart_point = true;
             break;
           case 1:
             printf(">>> Test harness restarting after exception\n");
@@ -361,7 +411,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
             case 'L':
               {
                 printf("Receive file by XMODEM.\n");
-                int success = xmodem_receive(0xc0000000);
+                int success = xmodem_receive(LOAD_BASE);
                 if (success)
                   printf("Success!\n");
                 else
@@ -371,16 +421,18 @@ int _main(unsigned int cpuid, unsigned int load_address) {
             case 'G':
               {
                 int rc;
-                char *targ = (char *) 0xc0000000;
+                char *targ = (char *) LOAD_BASE;
                 cachectrl_flush(CACHECTRL_L1_DATA);
+                cachectrl_invalidate_range(CACHECTRL_L1_INSN, targ,
+                                           256 * 1024 * 1024 - LOAD_BASE);
                 if (targ[0] == 0x19
                     && targ[1] == 0xe8
                     && targ[2] == 0xfc
                     && targ[3] == 0xff
                     && targ[4] == 0xff
-                    && (targ[5] == 0xcf || targ[5] == 0x0f)) {
+                    && targ[5] == 0x0f) {
                   printf("Signature looks OK, starting program!\n");
-                  rc = run_code(0xc0000000);
+                  rc = run_code(LOAD_BASE);
                   printf("Program returned directly (%d)\n", rc);
                   /* Probably register state is all screwed up, so do a
                      longjmp.  */

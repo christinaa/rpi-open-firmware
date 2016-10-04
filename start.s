@@ -224,3 +224,14 @@ return_from_exception:
 	ldm r0-r5, (sp++)
 	ld lr, (sp++)
 	rti
+
+        .globl do_exception_recovery
+do_exception_recovery:
+        mov sp, r0
+        mov r0, #exception_recover
+        st r0, (sp+104)
+        ldm r16-r23, (sp++)
+        ldm r6-r15, (sp++)
+        ldm r0-r5, (sp++)
+        ld lr, (sp++)
+        rti

@@ -22,7 +22,7 @@ Cache control (enable, disable, flushing, invalidation).
 #include <cachectrl.h>
 
 static int int_disable(void) {
-        int enabled_previously;        
+        int enabled_previously;
         __asm__ __volatile__ ("mov %0,sr\n\tdi" : "=r" (enabled_previously));
         return (enabled_previously & (1 << 30)) != 0;
 }
