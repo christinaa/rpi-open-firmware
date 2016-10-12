@@ -78,6 +78,10 @@ static void cachectrl_range_op(unsigned flags, void *lo, size_t len,
         int was_enabled = int_disable();
         L1_D_FLUSH_S = (intptr_t) lo;
         L1_D_FLUSH_E = (intptr_t) hi;
+        /*L1_IC0_FLUSH_S = (intptr_t) lo;
+        L1_IC0_FLUSH_E = (intptr_t) hi;
+        L1_IC1_FLUSH_S = (intptr_t) lo;
+        L1_IC1_FLUSH_E = (intptr_t) hi;*/
         L2_FLUSH_STA = (intptr_t) lo;
         L2_FLUSH_END = (intptr_t) hi;
         if (flags & CACHECTRL_L1_INSN) {
@@ -129,4 +133,76 @@ void cachectrl_flush(unsigned flags) {
 
 void cachectrl_invalidate(unsigned flags) {
         cachectrl_invalidate_range(flags, (void*) 0, 0xffffffffu);
+}
+
+void cachectrl_savestate(struct cachestate *cs) {
+        cs->l1_ic0_control = L1_IC0_CONTROL & L1_IC0_CONTROL_START_FLUSH_CLR;
+        cs->l1_ic1_control = L1_IC1_CONTROL & L1_IC1_CONTROL_START_FLUSH_CLR;
+        cs->l1_d_control = L1_D_CONTROL & L1_D_CONTROL_DC0_FLUSH_CLR
+                                        & L1_D_CONTROL_DC1_FLUSH_CLR;
+        cs->l2_cont = L2_CONT_OFF & L2_CONT_OFF_l2_flush_CLR;
+        cs->l1_ic0_priority = L1_IC0_PRIORITY;
+        cs->l1_ic1_priority = L1_IC1_PRIORITY;
+        cs->l1_d_priority = L1_D_PRIORITY;
+        cs->sandbox_start[0] = L1_L1_SANDBOX_START0;
+        cs->sandbox_start[1] = L1_L1_SANDBOX_START1;
+        cs->sandbox_start[2] = L1_L1_SANDBOX_START2;
+        cs->sandbox_start[3] = L1_L1_SANDBOX_START3;
+        cs->sandbox_start[4] = L1_L1_SANDBOX_START4;
+        cs->sandbox_start[5] = L1_L1_SANDBOX_START5;
+        cs->sandbox_start[6] = L1_L1_SANDBOX_START6;
+        cs->sandbox_start[7] = L1_L1_SANDBOX_START7;
+        cs->sandbox_end[0] = L1_L1_SANDBOX_END0;
+        cs->sandbox_end[1] = L1_L1_SANDBOX_END1;
+        cs->sandbox_end[2] = L1_L1_SANDBOX_END2;
+        cs->sandbox_end[3] = L1_L1_SANDBOX_END3;
+        cs->sandbox_end[4] = L1_L1_SANDBOX_END4;
+        cs->sandbox_end[5] = L1_L1_SANDBOX_END5;
+        cs->sandbox_end[6] = L1_L1_SANDBOX_END6;
+        cs->sandbox_end[7] = L1_L1_SANDBOX_END7;
+}
+
+static void enable_or_disable(uint32_t current, uint32_t disable_bits,
+                              uint32_t desired, unsigned cachebits) {
+        if (current & disable_bits) {
+                if (!(desired & disable_bits))
+                        cachectrl_enable(cachebits);
+        } else {
+                if (desired & disable_bits)
+                        cachectrl_disable(cachebits);
+        }
+}
+
+void cachectrl_restorestate(struct cachestate *cs) {
+        enable_or_disable(L1_IC0_CONTROL, L1_IC0_CONTROL_DISABLE_SET,
+                          cs->l1_ic0_control, CACHECTRL_IC0);
+        enable_or_disable(L1_IC1_CONTROL, L1_IC1_CONTROL_DISABLE_SET,
+                          cs->l1_ic1_control, CACHECTRL_IC1);
+        enable_or_disable(L1_D_CONTROL, L1_D_CONTROL_DC_DISABLE_SET,
+                          cs->l1_d_control, CACHECTRL_L1_DATA);
+        enable_or_disable(L2_CONT_OFF, L2_CONT_OFF_l2_disable_SET,
+                          cs->l2_cont, CACHECTRL_L2);
+        L1_IC0_CONTROL = cs->l1_ic0_control;
+        L1_IC1_CONTROL = cs->l1_ic1_control;
+        L1_D_CONTROL = cs->l1_d_control;
+        L1_IC0_PRIORITY = cs->l1_ic0_priority;
+        L1_IC1_PRIORITY = cs->l1_ic1_priority;
+        L1_D_PRIORITY = cs->l1_d_priority;
+        L2_CONT_OFF = cs->l2_cont;
+        L1_L1_SANDBOX_START0 = cs->sandbox_start[0];
+        L1_L1_SANDBOX_START1 = cs->sandbox_start[1];
+        L1_L1_SANDBOX_START2 = cs->sandbox_start[2];
+        L1_L1_SANDBOX_START3 = cs->sandbox_start[3];
+        L1_L1_SANDBOX_START4 = cs->sandbox_start[4];
+        L1_L1_SANDBOX_START5 = cs->sandbox_start[5];
+        L1_L1_SANDBOX_START6 = cs->sandbox_start[6];
+        L1_L1_SANDBOX_START7 = cs->sandbox_start[7];
+        L1_L1_SANDBOX_END0 = cs->sandbox_end[0];
+        L1_L1_SANDBOX_END1 = cs->sandbox_end[1];
+        L1_L1_SANDBOX_END2 = cs->sandbox_end[2];
+        L1_L1_SANDBOX_END3 = cs->sandbox_end[3];
+        L1_L1_SANDBOX_END4 = cs->sandbox_end[4];
+        L1_L1_SANDBOX_END5 = cs->sandbox_end[5];
+        L1_L1_SANDBOX_END6 = cs->sandbox_end[6];
+        L1_L1_SANDBOX_END7 = cs->sandbox_end[7];
 }

@@ -31,5 +31,8 @@ longjmp:
 	ld gp, (r1+96)
 	ld sp, (r1+100)
 	ld lr, (r1+104)
+        ld r27, (r1+108)
+        ld r28, (r1+112)
+        ld r29, (r1+116)
 	ld r1, (r1+4)
 	rts

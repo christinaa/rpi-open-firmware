@@ -36,6 +36,8 @@ static const char* exception_name(uint32_t n) {
 	prefix "  r4: 0x%08x  r5: 0x%08x  r6: 0x%08x  r7: 0x%08x\n" \
 	prefix "  r8: 0x%08x  r9: 0x%08x r10: 0x%08x r11: 0x%08x\n" \
 	prefix " r12: 0x%08x r13: 0x%08x r14: 0x%08x r15: 0x%08x\n" \
+	prefix " r16: 0x%08x r17: 0x%08x r18: 0x%08x r19: 0x%08x\n" \
+	prefix " r20: 0x%08x r21: 0x%08x r22: 0x%08x r23: 0x%08x\n" \
 	prefix "  pc: 0x%08x  lr: 0x%08x  sr: 0x%08x\n"
 
 static void print_vpu_state(vc4_saved_state_t* pcb) {
@@ -59,6 +61,14 @@ static void print_vpu_state(vc4_saved_state_t* pcb) {
 		pcb->r13,
 		pcb->r14,
 		pcb->r15,
+                pcb->r16,
+                pcb->r17,
+                pcb->r18,
+                pcb->r19,
+                pcb->r20,
+                pcb->r21,
+                pcb->r22,
+                pcb->r23,
 		pcb->pc,
 		pcb->lr,
 		pcb->sr
@@ -108,6 +118,8 @@ void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
 
 extern void arm_monitor_interrupt();
 
+extern int g_WaitingForTimer;
+
 void sleh_irq(vc4_saved_state_t* pcb, uint32_t tp) {
 	uint32_t status = IC0_S;
 	uint32_t source = status & 0xFF;
@@ -117,7 +129,17 @@ void sleh_irq(vc4_saved_state_t* pcb, uint32_t tp) {
 	if (source == INTERRUPT_ARM) {
 		arm_monitor_interrupt();
 	}
-	else {
+	else if (source == INTERRUPT_TIMER0) {
+#ifdef TESTHARNESS_ONLY
+                /* Clear the interrupt condition.  */
+                ST_CS |= 1;
+                if (g_WaitingForTimer) {
+                        printf("Target timing out.\n");
+                        g_WaitingForTimer = false;
+                        do_exception_recovery(pcb);
+                }
+#endif
+        } else {
 		print_vpu_state(pcb);
 		panic("unknown interrupt source!");
 	}

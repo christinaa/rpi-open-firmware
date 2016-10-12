@@ -28,5 +28,8 @@ setjmp:
 	st gp, (r0+96)
 	st sp, (r0+100)
 	st lr, (r0+104)
+        st r27, (r0+108)
+        st r28, (r0+112)
+        st r29, (r0+116)
 	mov r0, #0
 	rts

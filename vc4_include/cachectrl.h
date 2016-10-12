@@ -16,10 +16,30 @@
 #define L2_FLUSH_MODE_FLUSH             0
 #define L2_FLUSH_MODE_INVALIDATE        2
 
+/* These are for L1 sandbox region control.  Pretty much based on guesswork!  */
+#define L1_SANDBOX_CTRL_ENABLE          1
+#define L1_SANDBOX_CTRL_WRITE           2
+#define L1_SANDBOX_CTRL_READ            4
+
+struct cachestate {
+  uint32_t l1_ic0_control;
+  uint32_t l1_ic1_control;
+  uint32_t l1_d_control;
+  uint32_t l2_cont;
+  uint32_t l1_ic0_priority;
+  uint32_t l1_ic1_priority;
+  uint32_t l1_d_priority;
+  uint32_t sandbox_start[8];
+  uint32_t sandbox_end[8];
+};
+
 extern void cachectrl_enable(unsigned flags);
 extern void cachectrl_disable(unsigned flags);
 extern void cachectrl_flush_range(unsigned flags, void *lo, size_t len);
 extern void cachectrl_invalidate_range(unsigned flags, void *lo, size_t len);
 extern void cachectrl_flush(unsigned flags);
 extern void cachectrl_invalidate(unsigned flags);
+extern void cachectrl_savestate(struct cachestate *cs);
+extern void cachectrl_restorestate(struct cachestate *cs);
+
 #endif

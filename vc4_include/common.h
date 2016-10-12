@@ -51,6 +51,7 @@ extern int putchar(int c);
 extern int vprintf(const char* fmt, va_list arp);
 extern int printf(const char *fmt, ...);
 extern int puts(const char* str);
+extern void *memset(void *s, int c, size_t n);
 
 #define TESTHARNESS_ONLY
 extern jmp_buf restart_shell;

@@ -292,10 +292,13 @@ static int xmodem_receive(unsigned int startaddr) {
 }
 
 bool have_restart_point = false;
+bool g_WaitingForTimer = false;
 jmp_buf restart_shell;
 jmp_buf postcopy_catcher;
+struct cachestate g_CacheState;
 
 static void return_from_code(void) {
+  cachectrl_restorestate(&g_CacheState);
   longjmp(restart_shell, 2);
 }
 
@@ -303,6 +306,20 @@ typedef void (*fn_returner)(void);
 
 static int run_code(unsigned int startaddr) {
   int (*fn)(fn_returner) = (int (*)(fn_returner)) startaddr;
+
+#if 1
+  /* A read-only region for the boot code.  */
+  L1_L1_SANDBOX_START1 = 7;
+  L1_L1_SANDBOX_END1 = 0x1ffff;
+  L1_L1_SANDBOX_START1 = 0x0 | L1_SANDBOX_CTRL_ENABLE | L1_SANDBOX_CTRL_READ;
+
+  /* A read/write region for the program under test.  */
+  L1_L1_SANDBOX_START0 = 7;
+  L1_L1_SANDBOX_END0 = 0x3fffffff;
+  L1_L1_SANDBOX_START0 = (128 * 1024) | L1_SANDBOX_CTRL_ENABLE |
+                         L1_SANDBOX_CTRL_WRITE | L1_SANDBOX_CTRL_READ;
+#endif
+
   return fn(&return_from_code);
 }
 
@@ -311,8 +328,17 @@ __attribute__((noinline)) static void *where_are_we(void) {
 }
 
 void exception_recover(void) {
-  if (have_restart_point)
+  /*int status;
+  __asm__ __volatile__ ("mov %0,sr" : "=r" (status));
+  
+  printf ("exception_recover: status=%x\n", status);*/
+  
+  cachectrl_flush(CACHECTRL_ALL);
+  
+  if (have_restart_point) {
+    cachectrl_restorestate(&g_CacheState);
     longjmp(restart_shell, 1);
+  }
 
   printf("No recovery point! Hanging now.\n");
 
@@ -392,6 +418,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                    (int) where_are_we());
         }
 
+        cachectrl_savestate(&g_CacheState);
+
         switch (setjmp(restart_shell)) {
           case 0:
             printf(">>> Test harness starting\n");
@@ -405,6 +433,15 @@ int _main(unsigned int cpuid, unsigned int load_address) {
             break;
         }
 
+        g_WaitingForTimer = false;
+        
+        /* Clear start & end of RAM.  Just an attempt to tidy up anything left
+           over from a previous test that might affect the current one.  */
+        memset((void*) 0x20000, 0, 1024 * 1024);
+        memset((void*) (255 * 1024 * 1024), 0, 1024 * 1024);
+        cachectrl_flush(CACHECTRL_ALL);
+        /*printf("now go!\n");*/
+
         while (1) {
           int ch = uart_getc();
           switch (ch) {
@@ -415,7 +452,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                 if (success)
                   printf("Success!\n");
                 else
-                  printf("Tranfer failed.\n");
+                  printf("Transfer failed.\n");
               }
               break;
             case 'G':
@@ -425,7 +462,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                 cachectrl_flush(CACHECTRL_L1_DATA);
                 cachectrl_invalidate_range(CACHECTRL_L1_INSN, targ,
                                            256 * 1024 * 1024 - LOAD_BASE);
-                if (targ[0] == 0x19
+                if (targ[0] == 0x1c
                     && targ[1] == 0xe8
                     && targ[2] == 0xfc
                     && targ[3] == 0xff
@@ -434,12 +471,27 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                   printf("Signature looks OK, starting program!\n");
                   rc = run_code(LOAD_BASE);
                   printf("Program returned directly (%d)\n", rc);
-                  /* Probably register state is all screwed up, so do a
-                     longjmp.  */
+                  /* We should never reach here, but if we do register state
+                     is all screwed up, so do a longjmp.  */
+                  cachectrl_restorestate(&g_CacheState);
                   longjmp(restart_shell, 2);
                 } else {
                   printf("Signature looks bad, doing nothing.\n");
                 }
+              }
+              break;
+            case 'T':
+              {
+                unsigned starttime = ST_CLO;
+                /* The timeout in the board file is 300 seconds.  If we admit
+                   defeat just before that, we might be able to avoid being
+                   unceremoniously killed (which might not work out too well
+                   e.g. for subsequent tests).  */
+                ST_C0 = starttime + 298u * 1000000u;
+                ST_CS |= 1;
+                /* This is a bit dubious wrt. sharing with an IRQ handler.  Ah
+                   well, it'll probably be OK.  */
+                g_WaitingForTimer = true;
               }
               break;
             case '?':
