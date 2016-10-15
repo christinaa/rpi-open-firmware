@@ -207,8 +207,12 @@ fleh_\label:
 	ExceptionHandler icache, #10
 	ExceptionHandler veccore, #11
 	ExceptionHandler badl2alias, #12
-	ExceptionHandler breakpoint, #13
+	; ExceptionHandler breakpoint, #13
 	ExceptionHandler unknown, #14
+
+fleh_breakpoint:
+        nop
+        rti
 
 fleh_irq:
 	SaveRegsAll

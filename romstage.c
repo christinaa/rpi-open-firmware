@@ -19,6 +19,7 @@ VideoCoreIV first stage bootloader.
 
 #include <common.h>
 #include <hardware.h>
+#include <cpu.h>
 
 uint32_t g_CPUID;
 
@@ -181,6 +182,19 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	/* bring up SDRAM */
 	sdram_init();
 	printf("SDRAM initialization completed successfully!\n");
+
+        printf("Breakpoint mode test:\n");
+        {
+          unsigned status;
+          __asm__ __volatile__ ("mov %0,sr" : "=r" (status));
+          printf("status reg (before bkpt): %x\n", status);
+          __asm__ __volatile__ ("nop\n\tnop\n\tbkpt\n\tnop\n\tnop");
+          __asm__ __volatile__ ("mov %0,sr" : "=r" (status));
+          printf("status reg (after bkpt): %x\n", status);
+        }
+
+        /* Just stop here.  */
+        hang_cpu();
 
 	/* bring up ARM */
 	arm_init();
