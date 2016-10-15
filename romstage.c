@@ -307,7 +307,7 @@ typedef void (*fn_returner)(void);
 static int run_code(unsigned int startaddr) {
   int (*fn)(fn_returner) = (int (*)(fn_returner)) startaddr;
 
-#if 1
+#if 0
   /* A read-only region for the boot code.  */
   L1_L1_SANDBOX_START1 = 7;
   L1_L1_SANDBOX_END1 = 0x1ffff;
@@ -511,7 +511,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                    defeat just before that, we might be able to avoid being
                    unceremoniously killed (which might not work out too well
                    e.g. for subsequent tests).  */
-                ST_C0 = starttime + 298u * 1000000u;
+                ST_C0 = starttime + /*298u*/ 8 * 1000000u;
                 ST_CS |= 1;
                 /* This is a bit dubious wrt. sharing with an IRQ handler.  Ah
                    well, it'll probably be OK.  */

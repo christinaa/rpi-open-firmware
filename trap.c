@@ -139,6 +139,10 @@ void sleh_irq(vc4_saved_state_t* pcb, uint32_t tp) {
 
 	printf("VPU Received interrupt from source %d\n", source);
 
+        unsigned sreg;
+        __asm__ __volatile__ ("mov %0,sr" : "=r" (sreg));
+        printf("in sleh_irq. SR=%x\n", sreg);
+
 	if (source == INTERRUPT_ARM) {
 		arm_monitor_interrupt();
 	}
