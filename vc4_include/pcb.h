@@ -22,6 +22,12 @@ Process control block.
 #include <common.h>
 
 typedef struct {
+        uint32_t r29;
+        uint32_t r28;
+        uint32_t r27;
+        uint32_t r26;
+        uint32_t r25;
+        uint32_t r24;
 	uint32_t r23;
 	uint32_t r22;
 	uint32_t r21;

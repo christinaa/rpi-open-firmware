@@ -168,13 +168,11 @@ delayloop2:
  ************************************************************/
 
 .macro SaveRegsLower 
-	stm lr, (--sp)
-	stm r0-r5, (--sp)
+	stm r0-r5, lr, (--sp)
 .endm
 
 .macro SaveRegsUpper
-	stm r6-r15, (--sp)
-	stm r16-r23, (--sp)
+	stm r6-r29, (--sp)
 .endm
 
 .macro SaveRegsAll
@@ -189,6 +187,8 @@ fatal_exception:
 
 .macro ExceptionHandler label, exception_number
 fleh_\label:
+        bkpt
+        nop
 	SaveRegsLower
 	mov r1, \exception_number
 	b fatal_exception
@@ -207,8 +207,12 @@ fleh_\label:
 	ExceptionHandler icache, #10
 	ExceptionHandler veccore, #11
 	ExceptionHandler badl2alias, #12
-	ExceptionHandler breakpoint, #13
+	;ExceptionHandler breakpoint, #13
 	ExceptionHandler unknown, #14
+
+fleh_breakpoint:
+        nop
+        rti
 
 fleh_irq:
 	SaveRegsAll
@@ -219,8 +223,8 @@ fleh_irq:
 	bl sleh_irq
 
 return_from_exception:
-	ldm r16-r23, (sp++)
-	ldm r6-r15, (sp++)
+        add sp, #6*4
+	ldm r6-r23, (sp++)
 	ldm r0-r5, (sp++)
 	ld lr, (sp++)
 	rti
@@ -229,9 +233,9 @@ return_from_exception:
 do_exception_recovery:
         mov sp, r0
         mov r0, #exception_recover
-        st r0, (sp+104)
-        ldm r16-r23, (sp++)
-        ldm r6-r15, (sp++)
+        st r0, (sp+128)
+        add sp, #6*4
+        ldm r6-r23, (sp++)
         ldm r0-r5, (sp++)
         ld lr, (sp++)
         rti

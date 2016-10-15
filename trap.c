@@ -38,7 +38,9 @@ static const char* exception_name(uint32_t n) {
 	prefix " r12: 0x%08x r13: 0x%08x r14: 0x%08x r15: 0x%08x\n" \
 	prefix " r16: 0x%08x r17: 0x%08x r18: 0x%08x r19: 0x%08x\n" \
 	prefix " r20: 0x%08x r21: 0x%08x r22: 0x%08x r23: 0x%08x\n" \
-	prefix "  pc: 0x%08x  lr: 0x%08x  sr: 0x%08x\n"
+	prefix " r24: 0x%08x r25: 0x%08x r26: 0x%08x r27: 0x%08x\n" \
+	prefix " r28: 0x%08x r29: 0x%08x\n"                         \
+	prefix "  pc: 0x%08x  lr: 0x%08x  sr: 0x%08x  sp: 0x%08x\n"
 
 static void print_vpu_state(vc4_saved_state_t* pcb) {
 	printf("VPU registers:\n");
@@ -69,9 +71,16 @@ static void print_vpu_state(vc4_saved_state_t* pcb) {
                 pcb->r21,
                 pcb->r22,
                 pcb->r23,
+                pcb->r24,
+                pcb->r25,
+                pcb->r26,
+                pcb->r27,
+                pcb->r28,
+                pcb->r29,
 		pcb->pc,
 		pcb->lr,
-		pcb->sr
+		pcb->sr,
+                pcb
 	);
 
 	printf("Exception info (IC0):\n");
@@ -103,6 +112,10 @@ __attribute__((noreturn))
 extern void do_exception_recovery(vc4_saved_state_t *);
 
 void sleh_fatal(vc4_saved_state_t* pcb, uint32_t n) {
+        unsigned status;
+        __asm__ __volatile__ ("mov %0,sr" : "=r" (status));
+        printf("in sleh_fatal. SR=%x\n", status);
+
 	printf("Fatal VPU Exception: %s\n", exception_name(n));
 
 	print_vpu_state(pcb);
@@ -138,6 +151,13 @@ void sleh_irq(vc4_saved_state_t* pcb, uint32_t tp) {
                         g_WaitingForTimer = false;
                         do_exception_recovery(pcb);
                 }
+        } else if (source == 0) {
+                unsigned cpuid;
+                __asm__ __volatile__ ("version %0" : "=r" (cpuid));
+                printf ("cpuid/version: %x\n", cpuid);
+                unsigned sreg;
+                __asm__ __volatile__ ("mov %0,sr" : "=r" (sreg));
+                printf("handling swi: sreg=%x\n", sreg);
 #endif
         } else {
 		print_vpu_state(pcb);

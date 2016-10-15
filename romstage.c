@@ -328,10 +328,11 @@ __attribute__((noinline)) static void *where_are_we(void) {
 }
 
 void exception_recover(void) {
-  /*int status;
+  int status, stackreg;
   __asm__ __volatile__ ("mov %0,sr" : "=r" (status));
+  __asm__ __volatile__ ("mov %0,sp" : "=r" (stackreg));
   
-  printf ("exception_recover: status=%x\n", status);*/
+  printf ("exception_recover: status=%x, sp=%x\n", status, stackreg);
   
   cachectrl_flush(CACHECTRL_ALL);
   
@@ -348,6 +349,8 @@ void exception_recover(void) {
 #define LOAD_BASE 0x20000
 
 #endif
+
+int zero = 0;
 
 int _main(unsigned int cpuid, unsigned int load_address) {
 	switch_vpu_to_pllc();
@@ -388,6 +391,28 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 
 	panic("main exiting!");
 #else
+
+#if 0
+        printf("Pre-relocation bkpt test.\n");
+        {
+          unsigned status;
+          __asm__ __volatile__ ("mov %0,sr" : "=r" (status));
+          printf("status reg: %x\n", status);
+          //__asm__ __volatile__ ("bkpt");
+          {
+            int x = status / zero;
+            printf("x=%d\n", x);
+          }
+          __asm__ __volatile__ ("mov %0,sr" : "=r" (status));
+          printf("status reg: %x\n", status);
+        }
+#endif
+
+        L1_IC0_FLUSH_S = 0;
+        L1_IC0_FLUSH_E = 0x3fffffff;
+        L1_IC1_FLUSH_S = 0;
+        L1_IC0_FLUSH_E = 0x3fffffff;
+        
         printf("Attempting relocation...\n");
         switch (setjmp(postcopy_catcher)) {
           case 0:
@@ -405,7 +430,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                    (int) where_are_we());
             /* Now we're running from the uncached alias, we can turn on L2
                cache safely.  */
-            cachectrl_enable(CACHECTRL_IC0 | CACHECTRL_DC0 | CACHECTRL_L2);
+            //cachectrl_enable(CACHECTRL_IC0 | CACHECTRL_DC0 | CACHECTRL_L2);
             postcopy_catcher[26] -= 0xc0000000 + 128 * 1024;
             /* ...and copy the boot code back to where it's supposed to be.  */
             memcpy((void *) 0, (void *) (0xc0000000 + 128 * 1024), 128 * 1024);
@@ -459,9 +484,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
               {
                 int rc;
                 char *targ = (char *) LOAD_BASE;
-                cachectrl_flush(CACHECTRL_L1_DATA);
-                cachectrl_invalidate_range(CACHECTRL_L1_INSN, targ,
-                                           256 * 1024 * 1024 - LOAD_BASE);
+                cachectrl_flush(CACHECTRL_L1_DATA | CACHECTRL_L2);
+                cachectrl_invalidate(CACHECTRL_L1_INSN);
                 if (targ[0] == 0x1c
                     && targ[1] == 0xe8
                     && targ[2] == 0xfc
