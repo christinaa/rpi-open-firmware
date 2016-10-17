@@ -307,17 +307,19 @@ typedef void (*fn_returner)(void);
 static int run_code(unsigned int startaddr) {
   int (*fn)(fn_returner) = (int (*)(fn_returner)) startaddr;
 
-#if 0
+#if 1
   /* A read-only region for the boot code.  */
   L1_L1_SANDBOX_START1 = 7;
   L1_L1_SANDBOX_END1 = 0x1ffff;
-  L1_L1_SANDBOX_START1 = 0x0 | L1_SANDBOX_CTRL_ENABLE | L1_SANDBOX_CTRL_READ;
+  L1_L1_SANDBOX_START1 = 0x0 | L1_SANDBOX_CTRL_EXECUTE | L1_SANDBOX_CTRL_READ |
+                         L1_SANDBOX_CTRL_PRIV_SUPER;
 
   /* A read/write region for the program under test.  */
   L1_L1_SANDBOX_START0 = 7;
   L1_L1_SANDBOX_END0 = 0x3fffffff;
-  L1_L1_SANDBOX_START0 = (128 * 1024) | L1_SANDBOX_CTRL_ENABLE |
-                         L1_SANDBOX_CTRL_WRITE | L1_SANDBOX_CTRL_READ;
+  L1_L1_SANDBOX_START0 = (128 * 1024) | L1_SANDBOX_CTRL_EXECUTE |
+                         L1_SANDBOX_CTRL_WRITE | L1_SANDBOX_CTRL_READ |
+                         L1_SANDBOX_CTRL_PRIV_SUPER;
 #endif
 
   return fn(&return_from_code);
@@ -430,7 +432,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                    (int) where_are_we());
             /* Now we're running from the uncached alias, we can turn on L2
                cache safely.  */
-            //cachectrl_enable(CACHECTRL_IC0 | CACHECTRL_DC0 | CACHECTRL_L2);
+            cachectrl_enable(CACHECTRL_IC0 | CACHECTRL_DC0 | CACHECTRL_L2);
             postcopy_catcher[26] -= 0xc0000000 + 128 * 1024;
             /* ...and copy the boot code back to where it's supposed to be.  */
             memcpy((void *) 0, (void *) (0xc0000000 + 128 * 1024), 128 * 1024);

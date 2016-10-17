@@ -141,7 +141,8 @@ void sleh_irq(vc4_saved_state_t* pcb, uint32_t tp) {
 
         unsigned sreg;
         __asm__ __volatile__ ("mov %0,sr" : "=r" (sreg));
-        printf("in sleh_irq. SR=%x\n", sreg);
+        printf("in sleh_irq. SR=%x, saved SR=%x, saved PC=%x\n", sreg, pcb->sr,
+               pcb->pc);
 
 	if (source == INTERRUPT_ARM) {
 		arm_monitor_interrupt();
