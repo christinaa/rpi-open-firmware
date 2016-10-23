@@ -187,8 +187,6 @@ fatal_exception:
 
 .macro ExceptionHandler label, exception_number
 fleh_\label:
-        bkpt
-        nop
 	SaveRegsLower
 	mov r1, \exception_number
 	b fatal_exception

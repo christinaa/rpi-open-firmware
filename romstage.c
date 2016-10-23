@@ -297,9 +297,55 @@ jmp_buf restart_shell;
 jmp_buf postcopy_catcher;
 struct cachestate g_CacheState;
 
+void
+reset_init (void)
+{
+  uint32_t tmp;
+
+  tmp = PM_RSTC;
+  tmp &= PM_RSTC_WRCFG_CLR;
+  tmp |= PM_PASSWORD | (0 << PM_RSTC_WRCFG_LSB);
+  PM_RSTC = tmp;
+
+  tmp = PM_RSTC;
+  tmp &= PM_RSTC_SRCFG_CLR;
+  tmp |= PM_PASSWORD | (2 << PM_RSTC_SRCFG_LSB);
+  PM_RSTC = tmp;
+
+  tmp = PM_RSTC;
+  tmp &= PM_RSTC_DRCFG_CLR;
+  tmp |= PM_PASSWORD | (2 << PM_RSTC_DRCFG_LSB);
+  PM_RSTC = tmp;
+
+  if (PM_RSTS & PM_RSTS_HADWRF_SET)
+    PM_RSTS = PM_PASSWORD | 0;
+}
+
+__attribute__((noreturn)) void
+reset_wdog (uint32_t time)
+{
+  uint32_t tmp;
+  time &= 0xfffff;
+
+  printf(">>> Resetting\n");
+  // Wait for UART transmitter to become empty.
+  while (!(mmio_read32(AUX_MU_LSR_REG) & 0x40))
+    /* empty. */
+
+  PM_WDOG = PM_PASSWORD | time;
+  tmp = PM_RSTC;
+  tmp &= PM_RSTC_WRCFG_CLR;
+  tmp |= PM_PASSWORD | (2 << PM_RSTC_WRCFG_LSB);
+  PM_RSTC = tmp;
+  
+  for (;;)
+    /* Empty. */;
+}
+
 static void return_from_code(void) {
   cachectrl_restorestate(&g_CacheState);
-  longjmp(restart_shell, 2);
+  //longjmp(restart_shell, 2);
+  reset_wdog(10);
 }
 
 typedef void (*fn_returner)(void);
@@ -340,7 +386,8 @@ void exception_recover(void) {
   
   if (have_restart_point) {
     cachectrl_restorestate(&g_CacheState);
-    longjmp(restart_shell, 1);
+    //longjmp(restart_shell, 1);
+    reset_wdog(10);
   }
 
   printf("No recovery point! Hanging now.\n");
@@ -409,6 +456,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
           printf("status reg: %x\n", status);
         }
 #endif
+
+        reset_init();
 
         L1_IC0_FLUSH_S = 0;
         L1_IC0_FLUSH_E = 0x3fffffff;
@@ -500,7 +549,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                   /* We should never reach here, but if we do register state
                      is all screwed up, so do a longjmp.  */
                   cachectrl_restorestate(&g_CacheState);
-                  longjmp(restart_shell, 2);
+                  //longjmp(restart_shell, 2);
+                  reset_wdog(10);
                 } else {
                   printf("Signature looks bad, doing nothing.\n");
                 }
@@ -513,7 +563,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
                    defeat just before that, we might be able to avoid being
                    unceremoniously killed (which might not work out too well
                    e.g. for subsequent tests).  */
-                ST_C0 = starttime + /*298u*/ 8 * 1000000u;
+                ST_C0 = starttime + 297u * 1000000u;
                 ST_CS |= 1;
                 /* This is a bit dubious wrt. sharing with an IRQ handler.  Ah
                    well, it'll probably be OK.  */
@@ -522,6 +572,9 @@ int _main(unsigned int cpuid, unsigned int load_address) {
               break;
             case '?':
               printf ("OK.\n");
+              break;
+            case 'R':
+              reset_wdog(10);
               break;
             default:
               printf ("Unknown command: '%c'\n", ch);
