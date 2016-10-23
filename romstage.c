@@ -330,7 +330,7 @@ reset_wdog (uint32_t time)
   printf(">>> Resetting\n");
   // Wait for UART transmitter to become empty.
   while (!(mmio_read32(AUX_MU_LSR_REG) & 0x40))
-    /* empty. */
+    /* empty. */;
 
   PM_WDOG = PM_PASSWORD | time;
   tmp = PM_RSTC;
