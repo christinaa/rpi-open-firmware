@@ -21,7 +21,7 @@ You need Julian Brown's VC4 toolchain to build this (https://github.com/puppeh/v
     + compilation instructions for OSX in the [pdf](https://launchpadlibrarian.net/287100910/How-to-build-toolchain.pdf)
 
 #### Build instructions: 
-Compiling for osx is basically the same; you just have to be careful of OSX's built-in gcc (it's actually lldb) and the default version of guile (2.x and totally not compatible with older syntax). 
+Compiling for osx is basically the same; you just have to be careful of OSX's built-in gcc (it's actually llvm) and the default version of guile (2.x and totally not compatible with older syntax). 
 
 install dependencies: 
 
