@@ -11,6 +11,43 @@ All Broadcom headers are licensed under 3-Clause BSD License while the rest of t
 
 You need Julian Brown's VC4 toolchain to build this (https://github.com/puppeh/vc4-toolchain) as well as a arm-none-eabi-toolchain. You can tweak the paths to it in CROSS_COMPILE in `Makefile` (for VC4) and for ARM in `arm_chainloader/Makefile`, although by default it assumes they are currently in your path. Contributors should not commit their personal paths. Contributors should also use tabs for indentation. After you've done it, run `buildall.sh` and you should have a blob in `build/bootcode.bin`. 
 
+### Building on OSX
+
+#### Dependencies:
+
++ vc4-toolchain (https://github.com/puppeh/vc4-toolchain)
+
++ arm-none-abi-toolchain (https://launchpad.net/gcc-arm-embedded/+download)
+    + compilation instructions for OSX in the [pdf](https://launchpadlibrarian.net/287100910/How-to-build-toolchain.pdf)
+
+#### Build instructions: 
+Compiling for osx is basically the same; you just have to be careful of OSX's built-in gcc (it's actually lldb) and the default version of guile (2.x and totally not compatible with older syntax). 
+
+install dependencies: 
+
+    brew install gcc-6 guile18
+
+install the arm toolchain.
+
+    # follow the instructions in the pdf linked above
+
+Download the source and dependencies together for vc4-toolchain:
+
+    git clone --recursive https://github.com/puppeh/vc4-toolchain.git
+
+Once it’s done, you’ll need to add file paths to your $PATH variable: 
+
+    export PATH=$PATH:/path/to/gcc-arm-none-eabi-5_4-2016q3/bin:/path/to/vc4-toolchain/prefix/bin
+
+From the main instructions ("After you've done it, run buildall.sh and you should have a blob in build/bootcode.bin"):
+
+    git clone https://github.com/christinaa/rpi-open-firmware; cd rpi-open-firmware
+    CC=gcc-6 LIBRARY_PATH=/lib:/lib64 ./build-all.sh
+
+Note: on the last step, i set the library path here because mine initially had a trailing “:” and something in the build chain didn’t like that. CC=gcc-6 is just to ensure it's using the gcc install from the first step.
+
+That's it! Your shiny new binary is sitting at rpi-open-firmware/build/bootcode.bin.
+
 ## Technical Details
 The firmware is split into two parts, a VC4 part and and ARM part. The VC4 part initializes PLLC and moves VPU over to it, and then brings up UART. It then performs SDRAM initialization, making SDRAM available at `0xC0000000` (uncached alias). The ARM loader will do ARM initialization and then copy the ARM bootloader that's embedded in it to the alias. It will then map it to `0x0` in ARM's memory space and start ARM. The code under `arm_chainloader` is what will run on the ARM. 
 
