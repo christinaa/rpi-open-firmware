@@ -54,6 +54,12 @@ L_all_cores_start:
 
 L_core0:
 	mov sp, #(MEM_STACK_END)
+
+        /* we are loaded in secure supervisor mode -- drop permissions */
+        mrc p15, 0, r0, c1, c1, 0
+        orr r0, r0, #1
+        mcr p15, 0, r0, c1, c1, 0
+
 	b _firmware_rendezvous
 
 L_deadloop:
