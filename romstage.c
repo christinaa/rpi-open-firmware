@@ -43,7 +43,7 @@ uint32_t g_CPUID;
 
 void uart_putc(unsigned int ch)
 {
-	while(UART_MSR & 0x20) break;
+	while(UART_MSR & 0x20);
 	UART_RBRTHRDLL = ch;
 }
 
@@ -53,12 +53,13 @@ void uart_init(void) {
 	ra |= 4 << 12;
 	GP_FSEL1 = ra;
 
+        /*
         CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET;
         udelay(150);
         CM_UARTDIV = CM_PASSWORD | 0x6666;
         udelay(150);
         CM_UARTCTL |= CM_UARTCTL_ENAB_SET;
-        udelay(150);
+        udelay(150);*/
         
         mmio_write32(UART_CR, 0);
 
@@ -68,11 +69,16 @@ void uart_init(void) {
 	udelay(150);
 	GP_PUDCLK0 = 0;
 
+        CM_UARTDIV = CM_PASSWORD | 0x6666;
+        CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET | CM_UARTCTL_ENAB_SET;
+
+        mmio_write32(UART_ICR, 0x7FF);
         mmio_write32(UART_IBRD, 1);
         mmio_write32(UART_FBRD, 40);
-        mmio_write32(UART_ICR, 0x7FF);
         mmio_write32(UART_LCRH, 0x70);
         mmio_write32(UART_CR, 0x301);
+
+//        for(;;) uart_putc('B');
 }
 
 void led_init(void) {
@@ -188,12 +194,12 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 		__DATE__, __TIME__,
 		"OPENSOURCE"
 	);
+        }
 
 	printf("CPUID    = 0x%X\n", cpuid);
 	printf("LoadAddr = 0x%X\n", load_address);
 
 	print_crap();
-        }
 
 	g_CPUID = cpuid;
 
