@@ -1,10 +1,10 @@
 #include <hardware.h>
 
+#define UART_DR     (UART_BASE+0x00)
+#define UART_FR     (UART_BASE+0x18)
+
 void uart_putc(unsigned int ch)
 {
-	while(1) {
-		if (mmio_read32(AUX_MU_LSR_REG) & 0x20)
-			break;
-	}
-	mmio_write32(AUX_MU_IO_REG, ch);
+        while(mmio_read32(UART_FR) & 0x20);
+        mmio_write32(UART_DR, ch);
 }

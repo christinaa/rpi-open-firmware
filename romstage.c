@@ -53,14 +53,6 @@ void uart_init(void) {
 	ra |= 4 << 12;
 	GP_FSEL1 = ra;
 
-        /*
-        CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET;
-        udelay(150);
-        CM_UARTDIV = CM_PASSWORD | 0x6666;
-        udelay(150);
-        CM_UARTCTL |= CM_UARTCTL_ENAB_SET;
-        udelay(150);*/
-        
         mmio_write32(UART_CR, 0);
 
         GP_PUD = 0;
@@ -77,8 +69,6 @@ void uart_init(void) {
         mmio_write32(UART_FBRD, 40);
         mmio_write32(UART_LCRH, 0x70);
         mmio_write32(UART_CR, 0x301);
-
-//        for(;;) uart_putc('B');
 }
 
 void led_init(void) {
@@ -181,7 +171,6 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	led_init();
 	uart_init();
 
-        for(;;) {
 	printf(
 		"=========================================================\n"
 		"::\n"
@@ -194,7 +183,6 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 		__DATE__, __TIME__,
 		"OPENSOURCE"
 	);
-        }
 
 	printf("CPUID    = 0x%X\n", cpuid);
 	printf("LoadAddr = 0x%X\n", load_address);
