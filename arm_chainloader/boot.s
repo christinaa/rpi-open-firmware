@@ -17,4 +17,8 @@ boot_linux:
     // mov pc, r3
     //bx r3
     ldr r3, =0x2000000
+    push {lr}
     blx r3
+    pop {lr}
+    
+    bx lr
