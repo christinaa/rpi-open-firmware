@@ -22,19 +22,37 @@ VideoCoreIV first stage bootloader.
 
 uint32_t g_CPUID;
 
+#define UART_DR     (UART_BASE+0x00)
+#define UART_RSRECR (UART_BASE+0x04)
+#define UART_FR     (UART_BASE+0x18)
+#define UART_ILPR   (UART_BASE+0x20)
+#define UART_IBRD   (UART_BASE+0x24)
+#define UART_FBRD   (UART_BASE+0x28)
+#define UART_LCRH   (UART_BASE+0x2C)
+#define UART_CR     (UART_BASE+0x30)
+#define UART_IFLS   (UART_BASE+0x34)
+#define UART_IMSC   (UART_BASE+0x38)
+#define UART_RIS    (UART_BASE+0x3C)
+#define UART_MIS    (UART_BASE+0x40)
+#define UART_ICR    (UART_BASE+0x44)
+#define UART_DMACR  (UART_BASE+0x48)
+#define UART_ITCR   (UART_BASE+0x80)
+#define UART_ITIP   (UART_BASE+0x84)
+#define UART_ITOP   (UART_BASE+0x88)
+#define UART_TDR    (UART_BASE+0x8C)
+
 void uart_putc(unsigned int ch)
 {
-	while(1) {
-		if (mmio_read32(AUX_MU_LSR_REG) & 0x20)
-			break;
-	}
-	mmio_write32(AUX_MU_IO_REG, ch);
+	while(UART_MSR & 0x20) break;
+	UART_RBRTHRDLL = ch;
 }
 
 void uart_init(void) {
+        mmio_write32(UART_CR, 0);
+
 	unsigned int ra = GP_FSEL1;
 	ra &= ~(7 << 12);
-	ra |= 2 << 12;
+	ra |= 4 << 12;
 	GP_FSEL1 = ra;
 
 	GP_PUD = 0;
@@ -44,18 +62,16 @@ void uart_init(void) {
 	udelay(150);
 	GP_PUDCLK0 = 0;
 
-	mmio_write32(AUX_ENABLES, 1);
-	mmio_write32(AUX_MU_IER_REG, 0);
-	mmio_write32(AUX_MU_CNTL_REG, 0);
-	mmio_write32(AUX_MU_LCR_REG, 3);
-	mmio_write32(AUX_MU_MCR_REG, 0);
-	mmio_write32(AUX_MU_IER_REG, 0);
-	mmio_write32(AUX_MU_IIR_REG, 0xC6);
+        CM_UARTDIV = CM_PASSWORD | 42667;
+        CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET | CM_UARTCTL_ENAB_SET;
 
-	mmio_write32(AUX_MU_BAUD_REG, 270);
+        mmio_write32(UART_ICR, 0x7FF);
+        mmio_write32(UART_IBRD, 1);
+        mmio_write32(UART_FBRD, 40);
+        mmio_write32(UART_LCRH, 0x70);
+        mmio_write32(UART_CR, 0x301);
 
-	mmio_write32(AUX_MU_LCR_REG, 3);
-	mmio_write32(AUX_MU_CNTL_REG, 3);
+        for(;;) uart_putc('B');
 }
 
 void led_init(void) {
