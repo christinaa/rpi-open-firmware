@@ -31,6 +31,7 @@ FATFS g_BootVolumeFs;
 #define KERNEL_LOAD_ADDRESS 0x2000000
 
 extern "C" {
+        void flush_cache();
 	void boot_linux(int zero, int machineID, void* dtb, void* kernel);
 }
 
@@ -139,11 +140,23 @@ struct LoaderImpl {
 		/* read the kernel -- necessarily at fixed address */
 		uint8_t* zImage = reinterpret_cast<uint8_t*>(KERNEL_LOAD_ADDRESS);
 
-		if(!read_file("zImage", zImage, false)) {
+		if(!read_file("zImage", zImage, sz, false)) {
 			panic("error reading zImage");
 		}
 
 		logf("zImage loaded at 0x%X\n", (unsigned int)zImage);
+
+                logf("First few of zImage.. %X%X%X%X\n", zImage[0], zImage[1], zImage[2], zImage[3]);
+
+                /* flush the cache */
+                logf("Flushing....\n")
+                //flush_cache();
+                //__builtin___clear_cache(zImage, zImage + sz);
+                for (uint8_t* i = zImage; i < zImage + sz; i += 32) {
+                    __asm__ __volatile__ ("mcr p15,0,%0,c7,c10,1" : : "r" (i) : "memory");
+                }
+
+                /* fire away */
 		logf("Jumping to the Linux kernel...\n");
 		
 		/* this should never return */

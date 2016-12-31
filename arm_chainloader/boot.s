@@ -14,4 +14,7 @@ However, it's kind of ugly to do it in inline asm.. so here
 .globl boot_linux
 boot_linux:
     /* jump to kernel */
-    mov pc, r3
+    // mov pc, r3
+    //bx r3
+    ldr r3, =0x2000000
+    blx r3
