@@ -48,23 +48,25 @@ void uart_putc(unsigned int ch)
 }
 
 void uart_init(void) {
-        mmio_write32(UART_CR, 0);
-
 	unsigned int ra = GP_FSEL1;
 	ra &= ~(7 << 12);
 	ra |= 4 << 12;
 	GP_FSEL1 = ra;
 
-	GP_PUD = 0;
+        CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET;
+        udelay(150);
+        CM_UARTDIV = CM_PASSWORD | 0x6666;
+        udelay(150);
+        CM_UARTCTL |= CM_UARTCTL_ENAB_SET;
+        udelay(150);
+        
+        mmio_write32(UART_CR, 0);
 
+        GP_PUD = 0;
 	udelay(150);
 	GP_PUDCLK0 = (1 << 14) | (1 << 15);
 	udelay(150);
 	GP_PUDCLK0 = 0;
-
-        CM_UARTDIV = CM_PASSWORD | 0x619A;
-        CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET | CM_UARTCTL_ENAB_SET;
-        udelay(150);
 
         mmio_write32(UART_IBRD, 1);
         mmio_write32(UART_FBRD, 40);
