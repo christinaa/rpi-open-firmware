@@ -102,6 +102,19 @@ struct LoaderImpl {
 		res = fdt_setprop(v_fdt, node, "bootargs", cmdline, strlen((char*) cmdline) + 1);
 		logf("fdt_setprop(): %d\n", res);
 
+                /* pass in a memory map, skipping first meg for bootcode */
+                int memory = fdt_path_offset(v_fdt, "/memory");
+                if(memory < 0)
+                    return NULL;
+
+                /* start the memory map at 1M and grow continuous for 256M
+                 * TODO: does this disrupt I/O? */
+
+                uint32_t memmap[] = { 0x100000, 0x10000000 };
+
+                res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
+                logf("fdt_setprop(): %d\n", res);
+
 		logf("valid fdt loaded at 0x%X\n", (unsigned int)fdt);
 
 		return fdt;
