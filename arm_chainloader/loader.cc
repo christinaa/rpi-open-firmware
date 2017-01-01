@@ -28,10 +28,10 @@ Second stage bootloader.
 FATFS g_BootVolumeFs;
 
 #define ROOT_VOLUME_PREFIX "0:"
+#define DTB_LOAD_ADDRESS    0x20000000
 #define KERNEL_LOAD_ADDRESS 0x2000000
 
 extern "C" {
-        void flush_cache();
 	void boot_linux(int zero, int machineID, void* dtb, void* kernel);
 }
 
@@ -74,9 +74,9 @@ struct LoaderImpl {
 		return read_file(path, dest, size, should_alloc);
 	}
 
-	void* load_fdt(const char* filename, uint8_t* cmdline) {
+	uint8_t* load_fdt(const char* filename, uint8_t* cmdline) {
 		/* read device tree blob */
-		uint8_t* fdt = reinterpret_cast<uint8_t*>(MEM_USABLE_START);
+		uint8_t* fdt = reinterpret_cast<uint8_t*>(DTB_LOAD_ADDRESS);
 		size_t sz;
 
 		if(!read_file(filename, fdt, sz, false)) {
@@ -104,7 +104,7 @@ struct LoaderImpl {
 
 		logf("valid fdt loaded at 0x%X\n", (unsigned int)fdt);
 
-		return reinterpret_cast<void*>(fdt);
+		return fdt;
 	}
 
 	LoaderImpl() {	
@@ -129,7 +129,7 @@ struct LoaderImpl {
 		logf("kernel cmdline: %s\n", cmdline);
 		
 		/* load flat device tree */
-		void* fdt = load_fdt("rpi.dtb", cmdline);
+		uint8_t* fdt = load_fdt("rpi.dtb", cmdline);
 		if (!fdt) {
 			panic("fdt pointer is null");
 		}
@@ -150,8 +150,6 @@ struct LoaderImpl {
 
                 /* flush the cache */
                 logf("Flushing....\n")
-                //flush_cache();
-                //__builtin___clear_cache(zImage, zImage + sz);
                 for (uint8_t* i = zImage; i < zImage + sz; i += 32) {
                     __asm__ __volatile__ ("mcr p15,0,%0,c7,c10,1" : : "r" (i) : "memory");
                 }
@@ -160,6 +158,8 @@ struct LoaderImpl {
 		logf("Jumping to the Linux kernel...\n");
 		
 		/* this should never return */
+                logf("FDT loaded at %x\n", (unsigned int) fdt);
+                logf("First few of fdt... %X%X%X%X\n", fdt[0], fdt[1], fdt[2], fdt[3]);
 		boot_linux(0, ~0, fdt, zImage);
 	}
 };
