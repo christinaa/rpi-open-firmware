@@ -107,12 +107,18 @@ struct LoaderImpl {
                 if(memory < 0)
                     return NULL;
 
-                /* start the memory map at 1M and grow continuous for 256M
+                /* start the memory map at 1M/16 and grow continuous for 256M
                  * TODO: does this disrupt I/O? */
 
-                uint32_t memmap[] = { 0x100000, 0x10000000 };
+                char dtype[] = "memory";
+                //uint32_t memmap[] = { 0x10000, 0x20000000 };
+                //uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
+                //                     0x00, 0x00, 0x00, 0x20 };
+                uint8_t memmap[] = { 0x00, 0x01, 0x00, 0x00,
+                                     0x10, 0x00, 0x00, 0x00 };
 
                 res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
+                //res = fdt_setprop(v_fdt, memory, "device_type", dtype, strlen(dtype) + 1);
                 logf("fdt_setprop(): %d\n", res);
 
 		logf("valid fdt loaded at 0x%X\n", (unsigned int)fdt);
