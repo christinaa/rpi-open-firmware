@@ -114,7 +114,7 @@ struct LoaderImpl {
                 //uint32_t memmap[] = { 0x10000, 0x20000000 };
                 //uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
                 //                     0x00, 0x00, 0x00, 0x20 };
-                uint8_t memmap[] = { 0x00, 0x01, 0x00, 0x00,
+                uint8_t memmap[] = { 0x00, 0x00, 0x10, 0x00,
                                      0x10, 0x00, 0x00, 0x00 };
 
                 res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
