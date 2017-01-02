@@ -60,10 +60,10 @@ The current makefiles in the ARM part of it aim at **RPi1** (ie. ARMv6) but they
 Soon! Since `start.elf` is responsible for clock and power management in the original firmware (all registers in the `cpr` block), these drivers will have to be rewritten on ARM or our VC4 firmware to have most of the peripherals working properly (HDMI, for example). You can soon be able boot a very minimal version of Linux without the firmware and get it to work with UART and some USB devices and Ethernet, which is sufficient for certain headless systems. Still, you can expect half of the things to be broken (most importantly, video and DMA).
 
 ## Thanks To
- * **[https://github.com/hermanhermitage](Herman Hermitage)** for his VC4 documentation and for helping with working out suitable ARM PLL configurations.
- * **[https://github.com/puppeh](Julian Brown)** for reviewing the code and for his awesome VC4 toolchain.
- * **[https://github.com/bobbybee](Alyssa Rosenzweig)** for her contributions to the firmware especially in areas of Linux bringup and early ARM side initialization, as well as fixing mailbox support.
- * **[https://github.com/davidgiven](David Given)** for his initial LLVM project which I used as the base for my LLVM toolchain before moving to GCC.
- * **[https://github.com/phire](phire)** for reviewing my code.
- * **[https://github.com/broadcom](Broadcom)** for their header release.
+ * **[Herman Hermitage](https://github.com/hermanhermitage)** for his VC4 documentation and for helping with working out suitable ARM PLL configurations.
+ * **[Julian Brown](https://github.com/puppeh)** for reviewing the code and for his awesome VC4 toolchain.
+ * **[Alyssa Rosenzweig](https://github.com/bobbybee)** for her contributions to the firmware especially in areas of Linux bringup and early ARM side initialization, as well as fixing mailbox support.
+ * **[David Given](https://github.com/davidgiven)** for his initial LLVM project which I used as the base for my LLVM toolchain before moving to GCC.
+ * **[phire](https://github.com/phire)** for reviewing my code.
+ * **[Broadcom](https://github.com/broadcom)** for their header release.
  * Various other people not mentioned here.
