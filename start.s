@@ -87,11 +87,9 @@ _start:
 	RegExceptionHandler unknown, #30
 	RegExceptionHandler unknown, #31
 
-	//add r1, r3, #252
 	add r1, r3, #128
 	lea r2, fleh_irq
-	//mov r4, #492
-	add r4, r3, #492
+	add r4, r3, #572
 
 L_setup_hw_irq:
 	st r2, (r1)
