@@ -83,6 +83,8 @@ struct BCM2708GPIO {
 		);
 		uint32_t pin_shift = (pin_num % 10) * 3;
 
+
+
 	}
 };
 
@@ -159,11 +161,26 @@ struct BCM2708SDHost : BlockDevice {
 	void configure_pinmux() {
 		GP_FSEL4 = 0x24000000;
 		GP_FSEL5 = 0x924;
+
+		logf("waiting for pinmux pull update ...\n");
+
 		GP_PUD = 2;
-
-		logf("GPIOs set!\n");
-
 		mfence();
+		udelay(500);
+		GP_PUD = 0;
+
+		logf("waiting for pinmux clock update ...\n");
+
+		/* are these in bank 1 or 2? ah who gives a fuck ... */
+		GP_PUDCLK1 = GP_PUDCLK1_PUDCLKn32_SET;
+		GP_PUDCLK2 = GP_PUDCLK2_PUDCLKn64_SET;
+		udelay(500);
+
+		logf("ok ...\n");
+		GP_PUDCLK1 = 0;
+		GP_PUDCLK2 = 0;
+
+		logf("pinmux configured for aux0\n");
 	}
 
 	void reset() {
