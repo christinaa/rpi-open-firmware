@@ -62,9 +62,34 @@ SDHOST driver. This used to be known as ALTMMC.
 #define SDHSTS_TRANSFER_ERROR_MASK      (SDHSTS_CRC7_ERROR|SDHSTS_CRC16_ERROR|SDHSTS_REW_TIME_OUT|SDHSTS_FIFO_ERROR)
 #define SDHSTS_ERROR_MASK               (SDHSTS_CMD_TIME_OUT|SDHSTS_TRANSFER_ERROR_MASK)
 
+#define logf(fmt, ...) printf("[GPIO:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
+
+enum BCM2708PinmuxSetting {
+	kBCM2708PinmuxIn = 0,
+	kBCM2708PinmuxOut = 1,
+	kBCM2708Pinmux_ALT5 = 2,
+	kBCM2708Pinmux_ALT4 = 3,
+	kBCM2708Pinmux_ALT0 = 4,
+	kBCM2708Pinmux_ALT1 = 5,
+	kBCM2708Pinmux_ALT2 = 6,
+	kBCM2708Pinmux_ALT3 = 7
+};
+
+struct BCM2708GPIO {
+
+	static void set(uint32_t pin_num, BCM2708PinmuxSetting setting) {
+		uint32_t* fsel = reinterpret_cast<uint32_t*>(
+			reinterpret_cast<uint32_t>(&GP_FSEL0) + (0x4 * (pin_num/10))
+		);
+		uint32_t pin_shift = (pin_num % 10) * 3;
+
+	}
+};
+
+#undef logf
 #define logf(fmt, ...) printf("[EMMC:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
-struct SdhostImpl : BlockDevice {
+struct BCM2708SDHost : BlockDevice {
 	bool is_sdhc;
 	bool is_high_capacity;
 	bool card_ready;
@@ -397,6 +422,7 @@ struct SdhostImpl : BlockDevice {
 	bool init_card() {
 		char pnm[8];
 		uint32_t block_length;
+		uint32_t clock_div = 0;
 
 		send_no_resp(MMC_GO_IDLE_STATE);
 
@@ -424,6 +450,8 @@ struct SdhostImpl : BlockDevice {
 
 			/* work out the capacity of the card in bytes */
 			capacity_bytes = (SD_CSD_V2_CAPACITY(csd) * block_length);
+
+			clock_div = 5;
 		}
 		else if (SD_CSD_CSDVER(csd) == SD_CSD_CSDVER_1_0) {
 			printf("    CSD     : Ver 1.0\n");
@@ -433,7 +461,9 @@ struct SdhostImpl : BlockDevice {
 			block_length = 1 << SD_CSD_READ_BL_LEN(csd);
 
 			/* work out the capacity of the card in bytes */
-			capacity_bytes = (SD_CSD_CAPACITY(csd) * block_length);	
+			capacity_bytes = (SD_CSD_CAPACITY(csd) * block_length);
+
+			clock_div = 10;
 		}
 		else {
 			printf("ERROR: Unknown CSD version 0x%x!\n", SD_CSD_CSDVER(csd));
@@ -463,6 +493,15 @@ struct SdhostImpl : BlockDevice {
 		block_size = 512;
 
 		logf("Card initialization complete: %s %dMB SD%s Card\n", &pnm, capacity_bytes >> 20, is_high_capacity ? "HC" : "");
+
+		/*
+		 * this makes some dangerous assumptions that the all csd2 cards are sdio cards
+		 * and all csd1 cards are sd cards and that mmc cards won't be used.
+		 */
+		if (clock_div) {
+			logf("Indentification complete, changing clock to %dMHz for data mode ...", 250 / clock_div);
+			SH_CDIV = clock_div - 2;
+		}
 
 		return true;
 	}
@@ -531,13 +570,13 @@ struct SdhostImpl : BlockDevice {
 		SH_ARG = 0;
  	}
 
-	SdhostImpl() {
+	BCM2708SDHost() {
 		restart_controller();
 		logf("eMMC driver sucessfully started!\n");
 	}
 };
 
-SdhostImpl STATIC_DRIVER g_SDHostDriver {};
+BCM2708SDHost STATIC_DRIVER g_SDHostDriver {};
 
 BlockDevice* get_sdhost_device() {
 	return &g_SDHostDriver;
