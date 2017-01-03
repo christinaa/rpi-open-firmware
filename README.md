@@ -57,7 +57,7 @@ The current makefiles in the ARM part of it aim at **RPi1** (ie. ARMv6) but they
 
 ## Does it boot Linux?
 
-Soon! Since `start.elf` is responsible for clock and power management in the original firmware (all registers in the `cpr` block), these drivers will have to be rewritten on ARM or our VC4 firmware to have most of the peripherals working properly (HDMI, for example). You can soon be able boot a very minimal version of Linux without the firmware and get it to work with UART and some USB devices and Ethernet, which is sufficient for certain headless systems. Still, you can expect half of the things to be broken (most importantly, video and DMA).
+Yes, with some conditions. You can boot a very minimal version of Linux without the firmware and get it to work with UART. Support for eMMC, some USB devices, and Ethernet are in the works, which will be sufficient for certain headless systems. Still, you can expect half of the things to be broken (most importantly, video and DMA). Additionally, since `start.elf` is responsible for clock and power management in the original firmware (all registers in the `cpr` block), these drivers will have to be rewritten on ARM or our VC4 firmware to have most of the peripherals working properly (HDMI, for example).
 
 ## Thanks To
  * **[Herman Hermitage](https://github.com/hermanhermitage)** for his VC4 documentation and for helping with working out suitable ARM PLL configurations.
