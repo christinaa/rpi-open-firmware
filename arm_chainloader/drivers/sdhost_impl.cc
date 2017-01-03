@@ -462,7 +462,7 @@ struct SdhostImpl : BlockDevice {
 
 		block_size = 512;
 
-		logf("Card iniitlization complete: %s %dMB SD%s Card\n", &pnm, capacity_bytes >> 20, is_high_capacity ? "HC" : "");
+		logf("Card initialization complete: %s %dMB SD%s Card\n", &pnm, capacity_bytes >> 20, is_high_capacity ? "HC" : "");
 
 		return true;
 	}
