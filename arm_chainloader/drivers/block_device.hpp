@@ -30,6 +30,9 @@ struct BlockDevice {
 	}
 
 	virtual bool read_block(uint32_t sector, uint32_t* buf) = 0;
+
+	/* called to stop the block device */
+	virtual void stop() {}
 };
 
 extern BlockDevice* get_sdhost_device();

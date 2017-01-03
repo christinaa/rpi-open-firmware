@@ -149,7 +149,14 @@ MbrImpl STATIC_FILESYSTEM g_MbrDisk {};
 
 #include "fatfs/diskio.h"
 
+bool g_FatFsDiskInitialized = false;
+
 DSTATUS disk_initialize (BYTE pdrv) {
+	/* cache disk initialization state */
+	if (g_FatFsDiskInitialized) {
+		return static_cast<DRESULT>(0);
+	}
+
 	BYTE pt = g_MbrDisk.get_partition_type(pdrv);
 	switch (pt) {
 		case MBR_FAT32_INT13:
@@ -157,7 +164,8 @@ DSTATUS disk_initialize (BYTE pdrv) {
 		case MBR_FAT32:
 		case MBR_FAT16:
 			logf("Mounting FAT partition %d of type 0x%x\n", pdrv, pt);
-			return (DRESULT)0;
+			g_FatFsDiskInitialized = true;
+			return static_cast<DRESULT>(0);
 	}
 	logf("Disk %d isn't a FAT volume (partition type is 0x%x)!\n", pdrv, pt);
 	return STA_NOINIT;

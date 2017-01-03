@@ -20,6 +20,7 @@ Second stage bootloader.
 #include <drivers/fatfs/ff.h>
 #include <chainloader.h>
 #include <drivers/mailbox.hpp>
+#include <drivers/block_device.hpp>
 #include <libfdt.h>
 #include <memory_map.h>
 
@@ -83,9 +84,9 @@ struct LoaderImpl {
 			panic("error reading fdt");
 		}
 
-                void* v_fdt = reinterpret_cast<void*>(fdt);
+				void* v_fdt = reinterpret_cast<void*>(fdt);
 
-                int res;
+				int res;
 
 		if ((res = fdt_check_header(v_fdt)) != 0) {
 			panic("fdt blob invalid, fdt_check_header returned %d", res);
@@ -102,28 +103,34 @@ struct LoaderImpl {
 		res = fdt_setprop(v_fdt, node, "bootargs", cmdline, strlen((char*) cmdline) + 1);
 		logf("fdt_setprop(): %d\n", res);
 
-                /* pass in a memory map, skipping first meg for bootcode */
-                int memory = fdt_path_offset(v_fdt, "/memory");
-                if(memory < 0)
-                    return NULL;
+		/* pass in a memory map, skipping first meg for bootcode */
+		int memory = fdt_path_offset(v_fdt, "/memory");
+		if(memory < 0)
+			return NULL;
 
-                /* start the memory map at 1M/16 and grow continuous for 256M
-                 * TODO: does this disrupt I/O? */
+		/* start the memory map at 1M/16 and grow continuous for 256M
+		 * TODO: does this disrupt I/O? */
 
-                char dtype[] = "memory";
-                //uint32_t memmap[] = { 0x10000, 0x20000000 };
-                //uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
-                //                     0x00, 0x00, 0x00, 0x20 };
-                uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
-                                     0x30, 0x00, 0x00, 0x00 };
+		char dtype[] = "memory";
+		//uint32_t memmap[] = { 0x10000, 0x20000000 };
+		//uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
+		//                     0x00, 0x00, 0x00, 0x20 };
+		uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
+							 0x30, 0x00, 0x00, 0x00 };
 
-                res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
-                //res = fdt_setprop(v_fdt, memory, "device_type", dtype, strlen(dtype) + 1);
-                logf("fdt_setprop(): %d\n", res);
+		res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
+		//res = fdt_setprop(v_fdt, memory, "device_type", dtype, strlen(dtype) + 1);
+		logf("fdt_setprop(): %d\n", res);
 
 		logf("valid fdt loaded at 0x%X\n", (unsigned int)fdt);
 
 		return fdt;
+	}
+
+	void teardown_hardware() {
+		BlockDevice* bd = get_sdhost_device();
+		if (bd)
+			bd->stop();
 	}
 
 	LoaderImpl() {	
@@ -165,20 +172,22 @@ struct LoaderImpl {
 
 		logf("zImage loaded at 0x%X\n", (unsigned int)zImage);
 
-                logf("First few of zImage.. %X%X%X%X\n", zImage[0], zImage[1], zImage[2], zImage[3]);
+		logf("First few of zImage.. %X%X%X%X\n", zImage[0], zImage[1], zImage[2], zImage[3]);
 
-                /* flush the cache */
-                logf("Flushing....\n")
-                for (uint8_t* i = zImage; i < zImage + sz; i += 32) {
-                    __asm__ __volatile__ ("mcr p15,0,%0,c7,c10,1" : : "r" (i) : "memory");
-                }
+		/* flush the cache */
+		logf("Flushing....\n")
+		for (uint8_t* i = zImage; i < zImage + sz; i += 32) {
+			__asm__ __volatile__ ("mcr p15,0,%0,c7,c10,1" : : "r" (i) : "memory");
+		}
 
-                /* fire away */
+		teardown_hardware();
+
+		/* fire away */
 		logf("Jumping to the Linux kernel...\n");
 		
 		/* this should never return */
-                logf("FDT loaded at %x\n", (unsigned int) fdt);
-                logf("First few of fdt... %X%X%X%X\n", fdt[0], fdt[1], fdt[2], fdt[3]);
+		logf("FDT loaded at %x\n",  reinterpret_cast<uint32_t>(fdt));
+		logf("First few of fdt... %X%X%X%X\n", fdt[0], fdt[1], fdt[2], fdt[3]);
 		boot_linux(0, ~0, fdt, zImage);
 	}
 };

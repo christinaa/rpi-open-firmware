@@ -495,6 +495,24 @@ struct SdhostImpl : BlockDevice {
 		}
 	}
 
+	virtual void stop() override {
+		logf("stopping sdhost controller driver ...\n");
+
+		SH_CMD = 0;
+		SH_ARG = 0;
+		SH_TOUT = 0xA00000;
+		SH_CDIV = 0x1FB;
+
+		logf("powering down controller ...\n");
+		SH_VDD = 0;
+		SH_HCFG = 0;
+		SH_HBCT = 0x400;
+		SH_HBLC = 0;
+		SH_HSTS = 0x7F8;
+
+		logf("controller down!\n");
+	}
+
 	SdhostImpl() {
 		restart_controller();
 		logf("eMMC driver sucessfully started!\n");
