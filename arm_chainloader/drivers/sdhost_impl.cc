@@ -91,6 +91,8 @@ struct BCM2708GPIO {
 #undef logf
 #define logf(fmt, ...) printf("[EMMC:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
+#define kIdentSafeClockRate 0x148
+
 struct BCM2708SDHost : BlockDevice {
 	bool is_sdhc;
 	bool is_high_capacity;
@@ -540,7 +542,7 @@ struct BCM2708SDHost : BlockDevice {
 
 		SH_HCFG &= ~SH_HCFG_WIDE_EXT_BUS_SET;
 		SH_HCFG = SH_HCFG_SLOW_CARD_SET | SH_HCFG_WIDE_INT_BUS_SET;
-		SH_CDIV = 0x148;
+		SH_CDIV = kIdentSafeClockRate;
 
 		udelay(300);
 		mfence();
@@ -566,6 +568,13 @@ struct BCM2708SDHost : BlockDevice {
 		if (card_ready) {
 			logf("flushing fifo ...\n");
 			drain_fifo_nowait();
+
+			logf("asking card to enter idle state ...\n");
+			SH_CDIV = kIdentSafeClockRate;
+			udelay(150);
+
+			send_no_resp(MMC_GO_IDLE_STATE);
+			udelay(500);
 		}
 
 		logf("stopping sdhost controller driver ...\n");
