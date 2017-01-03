@@ -496,10 +496,11 @@ struct BCM2708SDHost : BlockDevice {
 
 		/*
 		 * this makes some dangerous assumptions that the all csd2 cards are sdio cards
-		 * and all csd1 cards are sd cards and that mmc cards won't be used.
+		 * and all csd1 cards are sd cards and that mmc cards won't be used. this also assumes
+		 * PLLC.CORE0 is at 250MHz which is probably a safe assumption since we set it.
 		 */
 		if (clock_div) {
-			logf("Indentification complete, changing clock to %dMHz for data mode ...", 250 / clock_div);
+			logf("Identification complete, changing clock to %dMHz for data mode ...\n", 250 / clock_div);
 			SH_CDIV = clock_div - 2;
 		}
 
