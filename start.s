@@ -108,7 +108,7 @@ L_setup_hw_irq:
 	mov r0, #(IC0_BASE + 0x10)
 	mov r1, #(IC1_BASE + 0x10)
 	mov r2, 0x11111111
-	mov r3, #(IC0_BASE + 0x10 + 0x20)
+	mov r3, #(IC0_BASE + 0x10 + 0x10)
 
 unmask_all:
 	st r2, (r0)
