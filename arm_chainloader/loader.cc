@@ -84,9 +84,9 @@ struct LoaderImpl {
 			panic("error reading fdt");
 		}
 
-				void* v_fdt = reinterpret_cast<void*>(fdt);
+		void* v_fdt = reinterpret_cast<void*>(fdt);
 
-				int res;
+		int res;
 
 		if ((res = fdt_check_header(v_fdt)) != 0) {
 			panic("fdt blob invalid, fdt_check_header returned %d", res);
