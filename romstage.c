@@ -51,6 +51,8 @@ void uart_init(void) {
 	unsigned int ra = GP_FSEL1;
 	ra &= ~(7 << 12);
 	ra |= 4 << 12;
+        ra &= ~(7 << 15);
+        ra |= 4 << 15;
 	GP_FSEL1 = ra;
 
         mmio_write32(UART_CR, 0);
