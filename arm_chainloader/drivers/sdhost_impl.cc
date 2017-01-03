@@ -305,6 +305,16 @@ struct SdhostImpl : BlockDevice {
 		}
 	}
 
+	void drain_fifo_nowait() {
+		while (true) {
+			SH_DATA;
+
+			uint32_t hsts = SH_HSTS;
+			if (hsts != SH_HSTS_DATA_FLAG_SET)
+				break;
+		}
+	}
+
 	virtual bool read_block(uint32_t sector, uint32_t* buf) override {
 		if (!card_ready)
 			panic("card not ready");
@@ -496,6 +506,11 @@ struct SdhostImpl : BlockDevice {
 	}
 
 	virtual void stop() override {
+		if (card_ready) {
+			logf("flushing fifo ...\n");
+			drain_fifo_nowait();
+		}
+
 		logf("stopping sdhost controller driver ...\n");
 
 		SH_CMD = 0;
@@ -510,8 +525,11 @@ struct SdhostImpl : BlockDevice {
 		SH_HBLC = 0;
 		SH_HSTS = 0x7F8;
 
-		logf("controller down!\n");
-	}
+		logf("resetting state machine ...\n");
+
+		SH_CMD = 0;
+		SH_ARG = 0;
+ 	}
 
 	SdhostImpl() {
 		restart_controller();
