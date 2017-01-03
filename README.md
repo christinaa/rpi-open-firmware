@@ -21,13 +21,13 @@ You need Julian Brown's VC4 toolchain to build this (https://github.com/puppeh/v
     + compilation instructions for OSX in the [pdf](https://launchpadlibrarian.net/287100910/How-to-build-toolchain.pdf)
 
 #### Build instructions: 
-Compiling for osx is basically the same; you just have to be careful of OSX's built-in gcc (it's actually llvm) and the default version of guile (2.x and totally not compatible with older syntax). 
+Compiling for osx is similar, but be careful with OSX's built-in "gcc" (LLVM-based) and the default version of guile (2.x), which is incompatible.
 
-install dependencies: 
+Install dependencies: 
 
     brew install gcc-6 guile18
 
-install the arm toolchain.
+Install the arm toolchain.
 
     # follow the instructions in the pdf linked above
 
@@ -44,7 +44,7 @@ From the main instructions ("After you've done it, run buildall.sh and you shoul
     git clone https://github.com/christinaa/rpi-open-firmware; cd rpi-open-firmware
     CC=gcc-6 LIBRARY_PATH=/lib:/lib64 ./build-all.sh
 
-Note: on the last step, i set the library path here because mine initially had a trailing “:” and something in the build chain didn’t like that. CC=gcc-6 is just to ensure it's using the gcc install from the first step.
+Note: on the last step, the library path is set as it initially had a trailing ":" which broke the build. `CC=gcc-6` is just to ensure it's using the gcc install from the first step.
 
 That's it! Your shiny new binary is sitting at rpi-open-firmware/build/bootcode.bin.
 
@@ -53,17 +53,17 @@ The firmware is split into two parts, a VC4 part and and ARM part. The VC4 part 
 
 The ARM chainloader then initializes the eMMC controller and access the boot partition with a FAT driver. From here, it chainloads the Linux kernel (other payloads are not tested and are not likely to work due to dependence on the firmware).
 
-The current makefiles in the ARM part of it aim at **RPi1** (ie. ARMv6) but they can be changed to ARMv7 if you want to build it for a newer model. I tested it on all RPi models and it works without any issues as far as I can tell (ARM can access peripherals and memory just fine as AXI supervisor). However it cannot access any secure peripherals (OTP/SDRAM/etc) since they appear to be on a separate bus accessible only to VC4.
+The current makefiles in the ARM part of it aim at **RPi1** (ie. ARMv6) but they can be changed to ARMv7 if you want to build it for a newer model. It was tested on all RPi models and it seems to work without any issues (ARM can access peripherals and memory just fine as AXI supervisor). However, it cannot access any secure peripherals (OTP/SDRAM/etc) since they appear to be on a separate bus accessible only to VC4.
 
 ## Does it boot Linux?
 
 Yes, with some conditions. You can boot a very minimal version of Linux without the firmware and get it to work with UART. Support for eMMC, some USB devices, and Ethernet are in the works, which will be sufficient for certain headless systems. Still, you can expect half of the things to be broken (most importantly, video and DMA). Additionally, since `start.elf` is responsible for clock and power management in the original firmware (all registers in the `cpr` block), these drivers will have to be rewritten on ARM or our VC4 firmware to have most of the peripherals working properly (HDMI, for example).
 
 ## Thanks To
- * **[Herman Hermitage](https://github.com/hermanhermitage)** for his VC4 documentation and for helping with working out suitable ARM PLL configurations.
+ * **[Herman Hermitage](https://github.com/hermanhermitage)** for his VC4 documentation and for helping determine suitable ARM PLL configurations.
  * **[Julian Brown](https://github.com/puppeh)** for reviewing the code and for his awesome VC4 toolchain.
  * **[Alyssa Rosenzweig](https://github.com/bobbybee)** for her contributions to the firmware especially in areas of Linux bringup and early ARM side initialization, as well as fixing mailbox support.
- * **[David Given](https://github.com/davidgiven)** for his initial LLVM project which I used as the base for my LLVM toolchain before moving to GCC.
- * **[phire](https://github.com/phire)** for reviewing my code.
+ * **[David Given](https://github.com/davidgiven)** for his initial LLVM project used as the base for the initial LLVM toolchain before moving to GCC.
+ * **[phire](https://github.com/phire)** for reviewing the code.
  * **[Broadcom](https://github.com/broadcom)** for their header release.
  * Various other people not mentioned here.
