@@ -1,5 +1,5 @@
 # Minimal Raspberry Pi VPU firmware
-This is a small firmware for RPi VPU (VideoCore4) versions 1/2/3 that is capable of initializing UART, VPU PLL (PLLC) and ARM itself. It's intended to be used instead of stock `bootcode.bin` on RPi's SD card. You **need** to have UART to see anything meaningful as far as output goes.
+This is a small firmware for RPi VPU (VideoCore4) versions 1/2/3 that is capable of initializing UART, VPU PLL (PLLC) and ARM itself. It's intended to be used instead of stock `bootcode.bin` on RPi's SD card. You **need** to have UART to see anything meaningful as far as output goes. The project additionally maintains a second-stage chainloader running on ARM capable of initializing eMMC, FAT, and the Linux kernel, as well as a shrinking set of patches to the Linux kernel.
 
 This has been tested on RPi1 Model B (Hynix PoP DDR), RPi 2 Model B and RPi 3 Model B (both Elpida DDR), but it should work with minimal modifications on all of the models. Development primarily targets the RPi 2 Model B.
 
