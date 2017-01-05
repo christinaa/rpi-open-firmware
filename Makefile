@@ -9,6 +9,7 @@ SRCS = \
 	start.s \
 	romstage.c \
 	sdram.c \
+	usb.c \
 	arm_loader.c \
 	arm_monitor.c \
 	trap.c \

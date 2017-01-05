@@ -160,6 +160,7 @@ void switch_vpu_to_pllc() {
 }
 
 extern void sdram_init();
+extern void usb_init();
 extern void arm_init();
 extern void monitor_start();
 
@@ -196,6 +197,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	/* bring up SDRAM */
 	sdram_init();
 	printf("SDRAM initialization completed successfully!\n");
+
+	usb_init();
 
 	/* bring up ARM */
 	arm_init();
