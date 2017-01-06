@@ -1,17 +1,13 @@
 #pragma once
 
+#include <lib/runtime.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <lib/panic.h>
-#include <lib/xprintf.h>
-#include <lib/tlsf/tlsf.h>
 #include <memory_map.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern void udelay(uint32_t time);
 
 static inline void __attribute__((noreturn)) hang_cpu() {
 	__asm__ __volatile__ (

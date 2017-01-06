@@ -17,7 +17,7 @@ ARM initialization stuff.
 
 =============================================================================*/
 
-#include <common.h>
+#include <lib/runtime.h>
 #include "hardware.h"
 
 
@@ -215,7 +215,8 @@ static void arm_load_code() {
 }
 
 static void arm_pmap_enter(uint32_t bus_address, uint32_t arm_address) {
-	volatile uint32_t* tte = &ARM_TRANSLATE;
+	volatile uint32_t* tte = reinterpret_cast<volatile uint32_t*>(&ARM_TRANSLATE);
+
 	uint32_t index = arm_address >> 24;
 	uint32_t pte = bus_address >> 21;
 

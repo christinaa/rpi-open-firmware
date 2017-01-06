@@ -2,6 +2,6 @@ Authors of the `rpi-open-firmware` project are listed below, for purposes of det
 
 ---
 
-Alex Badea <vamposdecampos@gmail.com>
-Alyssa Rosenzweig <alyssa@rosenzweig.io>
-Kristina Brooks <kristinaa@tuta.io>
+ * Alex Badea <vamposdecampos@gmail.com>
+ * Alyssa Rosenzweig <alyssa@rosenzweig.io>
+ * Kristina Brooks <tinab@hush.ai>

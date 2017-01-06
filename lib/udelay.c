@@ -17,14 +17,8 @@ Simple timer based delay routine.
 
 =============================================================================*/
 
-#ifdef __arm__
-	#include <stdint.h>
-#else
-	#include <common.h>
-#endif
-
-#include "../hardware.h"
-
+#include <lib/runtime.h>
+#include <hardware.h>
 
 void udelay(uint32_t t) {
 	uint32_t tv = ST_CLO;

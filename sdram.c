@@ -18,9 +18,8 @@ VideoCoreIV SDRAM initialization code.
 
 =============================================================================*/
 
-#include <common.h>
+#include <lib/runtime.h>
 #include <hardware.h>
-
 
 /*
  Registers

@@ -17,8 +17,9 @@ Panic routine.
 
 =============================================================================*/
 
+#include <lib/runtime.h>
+
 #if defined(__VIDEOCORE4__)
-	#include <common.h>
 	#include <cpu.h>
 #else
 	#include <chainloader.h>

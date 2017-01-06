@@ -17,7 +17,7 @@ VideoCoreIV second level exception handlers.
 
 =============================================================================*/
 
-#include <common.h>
+#include <lib/runtime.h>
 #include <pcb.h>
 #include <exception.h>
 #include <hardware.h>

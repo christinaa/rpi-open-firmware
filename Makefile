@@ -10,12 +10,13 @@ SRCS = \
 	romstage.c \
 	sdram.c \
 	arm_loader.c \
-	arm_monitor.c \
+	arm_monitor.cc \
 	trap.c \
 	lib/xprintf.c \
 	lib/panic.c \
 	lib/udelay.c \
 	lib/memcpy.c \
+	lib/cxx_runtime.c \
 	chainloader_inc.s
 
 ARCH = vc4
@@ -38,11 +39,14 @@ OBJ := $(addprefix $(TARGET_BUILD_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 # the cross compiler should already be in your path
 CROSS_COMPILE = vc4-elf-
 CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
 AS = $(CC)
 OBJCOPY = $(CROSS_COMPILE)objcopy
-LINKFLAGS = -nostdlib -nostartfiles
-CFLAGS = -c -nostdlib -std=c11 -fsingle-precision-constant -Wdouble-promotion -D__VIDEOCORE4__ -I./vc4_include/
-ASFLAGS = -c -nostdlib -x assembler-with-cpp -D__VIDEOCORE4__ -I./vc4_include/
+LINKFLAGS = -nostdlib -nostartfiles -Wl,--build-id=none -T linker.lds
+
+CFLAGS = -c -nostdlib -std=c11 -fsingle-precision-constant -Wdouble-promotion -D__VIDEOCORE4__ -I./vc4_include/ -I./
+ASFLAGS = -c -nostdlib -x assembler-with-cpp -D__VIDEOCORE4__ -I./vc4_include/ -I./
+CXXFLAGS = -c -nostdlib -std=c++11 -fno-exceptions -fno-rtti -D__VIDEOCORE4__ -I./vc4_include/ -I./
 
 HEADERS := \
 	$(shell find . -type f -name '*.h') \
@@ -64,6 +68,11 @@ $(TARGET_BUILD_DIR)/%.o: %.c $(HEADERS)
 	$(CREATE_SUBDIR)
 	@echo $(WARN_COLOR)CC  $(NO_COLOR) $@
 	@$(CC) $(CFLAGS) $< -o $@
+
+$(TARGET_BUILD_DIR)/%.o: %.cc $(HEADERS)
+	$(CREATE_SUBDIR)
+	@echo $(WARN_COLOR)CXX $(NO_COLOR) $@
+	@$(CXX) $(CXXFLAGS) $< -o $@
 
 $(TARGET_BUILD_DIR)/%.o: %.s $(HEADERS)
 	$(CREATE_SUBDIR)

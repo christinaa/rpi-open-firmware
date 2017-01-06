@@ -17,7 +17,7 @@ VideoCoreIV first stage bootloader.
 
 =============================================================================*/
 
-#include <common.h>
+#include <lib/runtime.h>
 #include <hardware.h>
 
 uint32_t g_CPUID;
@@ -51,26 +51,26 @@ void uart_init(void) {
 	unsigned int ra = GP_FSEL1;
 	ra &= ~(7 << 12);
 	ra |= 4 << 12;
-        ra &= ~(7 << 15);
-        ra |= 4 << 15;
+	ra &= ~(7 << 15);
+	ra |= 4 << 15;
 	GP_FSEL1 = ra;
 
-        mmio_write32(UART_CR, 0);
+	mmio_write32(UART_CR, 0);
 
-        GP_PUD = 0;
+	GP_PUD = 0;
 	udelay(150);
 	GP_PUDCLK0 = (1 << 14) | (1 << 15);
 	udelay(150);
 	GP_PUDCLK0 = 0;
 
-        CM_UARTDIV = CM_PASSWORD | 0x6666;
-        CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET | CM_UARTCTL_ENAB_SET;
+	CM_UARTDIV = CM_PASSWORD | 0x6666;
+	CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET | CM_UARTCTL_ENAB_SET;
 
-        mmio_write32(UART_ICR, 0x7FF);
-        mmio_write32(UART_IBRD, 1);
-        mmio_write32(UART_FBRD, 40);
-        mmio_write32(UART_LCRH, 0x70);
-        mmio_write32(UART_CR, 0x301);
+	mmio_write32(UART_ICR, 0x7FF);
+	mmio_write32(UART_IBRD, 1);
+	mmio_write32(UART_FBRD, 40);
+	mmio_write32(UART_LCRH, 0x70);
+	mmio_write32(UART_CR, 0x301);
 }
 
 void led_init(void) {
@@ -192,6 +192,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	print_crap();
 
 	g_CPUID = cpuid;
+
+	__cxx_init();
 
 	/* bring up SDRAM */
 	sdram_init();

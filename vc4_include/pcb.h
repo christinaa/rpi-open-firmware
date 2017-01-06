@@ -19,7 +19,7 @@ Process control block.
 
 #pragma once
 
-#include <common.h>
+#include <lib/runtime.h>
 
 typedef struct {
 	uint32_t r23;

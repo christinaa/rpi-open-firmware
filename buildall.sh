@@ -17,3 +17,8 @@ echo "Building firmware ..."
 echo "-----------------------------------------"
 cd ..
 make
+
+# stage through WSL
+if [ "$1" = "sw" ]; then
+	tools/wslstage.py
+fi

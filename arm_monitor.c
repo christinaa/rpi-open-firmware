@@ -17,7 +17,7 @@ First stage monitor.
 
 =============================================================================*/
 
-#include <common.h>
+#include <lib/runtime.h>
 #include "hardware.h"
 
 /*

@@ -3,12 +3,12 @@ TARGET_ARM_CHAINLOADER = arm_chainloader.bin
 
 SRCS = \
 	start.s \
-	lib/arm_bcopy.s \
-	lib/arm_bzero.s \
-	lib/arm_locore.s \
-	lib/arm_strlen.s \
-	lib/arm_memcmp.s \
-	lib/string_misc.c \
+	lib_armv6/arm_bcopy.s \
+	lib_armv6/arm_bzero.s \
+	lib_armv6/arm_locore.s \
+	lib_armv6/arm_strlen.s \
+	lib_armv6/arm_memcmp.s \
+	lib_armv6/string_misc.c \
 	drivers/uart.c \
 	drivers/cprman.cc \
 	drivers/libfdt/fdt.c \
@@ -23,8 +23,8 @@ SRCS = \
 	../lib/xprintf.c \
 	../lib/panic.c \
 	../lib/udelay.c \
+	../lib/cxx_runtime.c \
 	../lib/tlsf/tlsf.c \
-	minicxx.cc \
 	loader.cc \
 	main.c
 
