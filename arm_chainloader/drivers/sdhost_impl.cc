@@ -79,8 +79,8 @@ struct BCM2708GPIO {
 
 	static void set(uint32_t pin_num, BCM2708PinmuxSetting setting) {
 		uint32_t* fsel = reinterpret_cast<uint32_t*>(
-			reinterpret_cast<uint32_t>(&GP_FSEL0) + (0x4 * (pin_num/10))
-		);
+		                     reinterpret_cast<uint32_t>(&GP_FSEL0) + (0x4 * (pin_num/10))
+		                 );
 		uint32_t pin_shift = (pin_num % 10) * 3;
 
 
@@ -136,7 +136,7 @@ struct BCM2708SDHost : BlockDevice {
 
 		sts = SH_HSTS;
 		if (sts & SDHSTS_ERROR_MASK)
-			SH_HSTS = sts; 
+			SH_HSTS = sts;
 
 		current_cmd = command & SH_CMD_COMMAND_SET;
 
@@ -197,13 +197,13 @@ struct BCM2708SDHost : BlockDevice {
 		SH_HCFG = 0;
 		SH_HBCT = 0;
 		SH_HBLC = 0;
-	
+
 		uint32_t temp = SH_EDM;
 
 		temp &= ~((SDEDM_THRESHOLD_MASK<<SDEDM_READ_THRESHOLD_SHIFT) |
-		  (SDEDM_THRESHOLD_MASK<<SDEDM_WRITE_THRESHOLD_SHIFT));
+		          (SDEDM_THRESHOLD_MASK<<SDEDM_WRITE_THRESHOLD_SHIFT));
 		temp |= (SAFE_READ_THRESHOLD << SDEDM_READ_THRESHOLD_SHIFT) |
-			(SAFE_WRITE_THRESHOLD << SDEDM_WRITE_THRESHOLD_SHIFT);
+		        (SAFE_WRITE_THRESHOLD << SDEDM_WRITE_THRESHOLD_SHIFT);
 
 		SH_EDM = temp;
 		udelay(300);
@@ -237,7 +237,7 @@ struct BCM2708SDHost : BlockDevice {
 			logf("ERROR: unknown error, SH_CMD=0x%x\n", SH_CMD);
 			return false;
 		}
-		
+
 
 		return true;
 	}
@@ -291,7 +291,7 @@ struct BCM2708SDHost : BlockDevice {
 
 	bool identify_card() {
 		logf("identifying card ...\n");
-		
+
 		send_136_resp(MMC_ALL_SEND_CID);
 		if (!wait_and_get_response())
 			return false;
@@ -400,7 +400,7 @@ struct BCM2708SDHost : BlockDevice {
 
 
 			volatile uint32_t data = SH_DATA;
-			
+
 #ifdef DUMP_READ
 			printf("%08x ", data);
 #endif
@@ -471,8 +471,7 @@ struct BCM2708SDHost : BlockDevice {
 			capacity_bytes = (SD_CSD_V2_CAPACITY(csd) * block_length);
 
 			clock_div = 5;
-		}
-		else if (SD_CSD_CSDVER(csd) == SD_CSD_CSDVER_1_0) {
+		} else if (SD_CSD_CSDVER(csd) == SD_CSD_CSDVER_1_0) {
 			printf("    CSD     : Ver 1.0\n");
 			printf("    Capacity: %d\n", SD_CSD_CAPACITY(csd));
 			printf("    Size    : %d\n", SD_CSD_C_SIZE(csd));
@@ -483,12 +482,11 @@ struct BCM2708SDHost : BlockDevice {
 			capacity_bytes = (SD_CSD_CAPACITY(csd) * block_length);
 
 			clock_div = 10;
-		}
-		else {
+		} else {
 			printf("ERROR: Unknown CSD version 0x%x!\n", SD_CSD_CSDVER(csd));
 			return false;
 		}
-	
+
 		printf("    BlockLen: 0x%x\n", block_length);
 
 		if (!select_card()) {
@@ -498,7 +496,7 @@ struct BCM2708SDHost : BlockDevice {
 
 		if (SD_CSD_CSDVER(csd) == SD_CSD_CSDVER_1_0) {
 			/*
-			 * only needed for 1.0 ones, the 2.0 ones have this 
+			 * only needed for 1.0 ones, the 2.0 ones have this
 			 * fixed at 512.
 			 */
 			logf("Setting block length to 512 ...\n");
@@ -530,10 +528,10 @@ struct BCM2708SDHost : BlockDevice {
 		is_sdhc = false;
 
 		logf("hcfg 0x%X, cdiv 0x%X, edm 0x%X, hsts 0x%X\n",
-			SH_HCFG,
-			SH_CDIV,
-			SH_EDM,
-			SH_HSTS);
+		     SH_HCFG,
+		     SH_CDIV,
+		     SH_EDM,
+		     SH_HSTS);
 
 		logf("Restarting the eMMC controller ...\n");
 
@@ -558,8 +556,7 @@ struct BCM2708SDHost : BlockDevice {
 					panic("fifo flush cycle %d failed", i);
 				}
 			}
-		}
-		else {
+		} else {
 			panic("failed to reinitialize the eMMC controller");
 		}
 	}
@@ -595,7 +592,7 @@ struct BCM2708SDHost : BlockDevice {
 
 		SH_CMD = 0;
 		SH_ARG = 0;
- 	}
+	}
 
 	BCM2708SDHost() {
 		restart_controller();

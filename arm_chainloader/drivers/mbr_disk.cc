@@ -57,8 +57,8 @@ struct Mbr {
 
 static_assert(sizeof(Mbr) >= 512, "What the fuck");
 
-#define MBR_FAT16 0x04 
-#define MBR_FAT32 0x0B 
+#define MBR_FAT16 0x04
+#define MBR_FAT32 0x0B
 #define MBR_FAT32_INT13 0x0C
 #define MBR_FAT16_INT13 0x0E
 #define MBR_LINUX 0x83
@@ -66,13 +66,20 @@ static_assert(sizeof(Mbr) >= 512, "What the fuck");
 
 static const char* mbr_fs_to_string(int fs) {
 	switch (fs) {
-		case MBR_FAT32: return "FAT32"; 
-		case MBR_FAT32_INT13: return "FAT32-INT13"; 
-		case MBR_FAT16_INT13: return "FAT16-INT13";
-		case MBR_FAT16: return "FAT16";
-		case MBR_LINUX: return "Linux (ext2/ext3)";
-		case MBR_NTFS: return "NTFS";
-		default: return "<Unknown>";
+	case MBR_FAT32:
+		return "FAT32";
+	case MBR_FAT32_INT13:
+		return "FAT32-INT13";
+	case MBR_FAT16_INT13:
+		return "FAT16-INT13";
+	case MBR_FAT16:
+		return "FAT16";
+	case MBR_LINUX:
+		return "Linux (ext2/ext3)";
+	case MBR_NTFS:
+		return "NTFS";
+	default:
+		return "<Unknown>";
 	}
 }
 
@@ -96,7 +103,7 @@ struct MbrImpl {
 	inline int get_partition_type(uint8_t volume) {
 		if (volume > 3)
 			return 0;
-		return mbr->mbr_part[volume].part_typ;	
+		return mbr->mbr_part[volume].part_typ;
 	}
 
 	bool read_block(uint8_t volume, uint32_t sector, uint32_t* buf) {
@@ -119,7 +126,7 @@ struct MbrImpl {
 		}
 
 		if (!validate_signature()) {
-                        panic("invalid master boot record signature (got 0x%x)", mbr->mbr_sig);
+			panic("invalid master boot record signature (got 0x%x)", mbr->mbr_sig);
 		}
 
 		logf("MBR contents:\n");
@@ -159,13 +166,13 @@ DSTATUS disk_initialize (BYTE pdrv) {
 
 	BYTE pt = g_MbrDisk.get_partition_type(pdrv);
 	switch (pt) {
-		case MBR_FAT32_INT13:
-		case MBR_FAT16_INT13:
-		case MBR_FAT32:
-		case MBR_FAT16:
-			logf("Mounting FAT partition %d of type 0x%x\n", pdrv, pt);
-			g_FatFsDiskInitialized = true;
-			return static_cast<DRESULT>(0);
+	case MBR_FAT32_INT13:
+	case MBR_FAT16_INT13:
+	case MBR_FAT32:
+	case MBR_FAT16:
+		logf("Mounting FAT partition %d of type 0x%x\n", pdrv, pt);
+		g_FatFsDiskInitialized = true;
+		return static_cast<DRESULT>(0);
 	}
 	logf("Disk %d isn't a FAT volume (partition type is 0x%x)!\n", pdrv, pt);
 	return STA_NOINIT;
@@ -176,8 +183,7 @@ DSTATUS disk_status (BYTE pdrv) {
 }
 
 DRESULT disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count) {
-	while (count--)
-	{
+	while (count--) {
 		g_MbrDisk.read_block(pdrv, sector, buff);
 		sector++;
 		buff += g_MbrDisk.get_block_size();
@@ -186,21 +192,20 @@ DRESULT disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count) {
 }
 
 DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff) {
-	switch (cmd)
-	{
-		case CTRL_SYNC:
-			return (DRESULT)0;
-		case GET_SECTOR_SIZE:
-			*(WORD*)buff = g_MbrDisk.get_block_size();
-			return (DRESULT)0;
+	switch (cmd) {
+	case CTRL_SYNC:
+		return (DRESULT)0;
+	case GET_SECTOR_SIZE:
+		*(WORD*)buff = g_MbrDisk.get_block_size();
+		return (DRESULT)0;
 
-		case GET_SECTOR_COUNT:
-			*(WORD*)buff = 0;
-			return (DRESULT)0;
+	case GET_SECTOR_COUNT:
+		*(WORD*)buff = 0;
+		return (DRESULT)0;
 
-		case GET_BLOCK_SIZE:
-			*(WORD*)buff = 1;
-			return (DRESULT)0;
+	case GET_BLOCK_SIZE:
+		*(WORD*)buff = 1;
+		return (DRESULT)0;
 	}
 	return RES_PARERR;
 }

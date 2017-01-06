@@ -25,7 +25,7 @@ Mailbox driver.
 template<typename T>
 static bool wait_for_mask(T& reg, uint32_t mask, bool is_set, int timeout) {
 	while ((reg & mask) == (is_set ? 0 : mask)) {
-		if (timeout == 0) 
+		if (timeout == 0)
 			return false;
 		timeout--;
 		udelay(1);

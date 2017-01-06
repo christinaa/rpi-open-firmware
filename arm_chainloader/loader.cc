@@ -35,7 +35,7 @@ FATFS g_BootVolumeFs;
 typedef void (*linux_t)(uint32_t, uint32_t, void*);
 
 static_assert((MEM_USABLE_START+0x800000) < KERNEL_LOAD_ADDRESS,
-	"memory layout would not allow for kernel to be loaded at KERNEL_LOAD_ADDRESS, please check memory_map.h");
+              "memory layout would not allow for kernel to be loaded at KERNEL_LOAD_ADDRESS, please check memory_map.h");
 
 struct LoaderImpl {
 	inline bool file_exists(const char* path) {
@@ -45,10 +45,10 @@ struct LoaderImpl {
 	size_t read_file(const char* path, uint8_t*& dest, bool should_alloc = true) {
 		/* ensure file exists first */
 		if(!file_exists(path))
-		    panic("attempted to read %s, but it does not exist", path);
+			panic("attempted to read %s, but it does not exist", path);
 
 		/* read entire file into buffer */
-		FIL fp; 
+		FIL fp;
 		f_open(&fp, path, FA_READ);
 
 		unsigned int len = f_size(&fp);
@@ -85,14 +85,14 @@ struct LoaderImpl {
 
 		int node = fdt_path_offset(v_fdt, "/chosen");
 		if (node < 0)
-		    panic("no chosen node in fdt");
+			panic("no chosen node in fdt");
 
 		res = fdt_setprop(v_fdt, node, "bootargs", cmdline, strlen((char*) cmdline) + 1);
 
 		/* pass in a memory map, skipping first meg for bootcode */
 		int memory = fdt_path_offset(v_fdt, "/memory");
 		if(memory < 0)
-		    panic("no memory node in fdt");
+			panic("no memory node in fdt");
 
 		/* start the memory map at 1M/16 and grow continuous for 256M
 		 * TODO: does this disrupt I/O? */
@@ -112,7 +112,7 @@ struct LoaderImpl {
 			bd->stop();
 	}
 
-	LoaderImpl() {	
+	LoaderImpl() {
 		logf("Mounting boot partitiion ...\n");
 		FRESULT r = f_mount(&g_BootVolumeFs, ROOT_VOLUME_PREFIX, 1);
 		if (r != FR_OK) {
@@ -126,7 +126,7 @@ struct LoaderImpl {
 
 		cmdline[cmdlen - 1] = 0;
 		logf("kernel cmdline: %s\n", cmdline);
-		
+
 		/* load flat device tree */
 		uint8_t* fdt = load_fdt("rpi.dtb", cmdline);
 

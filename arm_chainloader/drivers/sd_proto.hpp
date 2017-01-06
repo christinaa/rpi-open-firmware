@@ -339,8 +339,7 @@
 
 #define MMC_RSP_BITS(resp, start, len)	__bitfield((resp), (start), (len))
 static inline int
-__bitfield(uint32_t *src, int start, int len)
-{
+__bitfield(uint32_t *src, int start, int len) {
 	uint8_t *sp;
 	uint32_t dst, mask;
 	int shift, bs, bc;

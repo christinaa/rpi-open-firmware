@@ -41,8 +41,7 @@ uint32_t g_CPUID;
 #define UART_ITOP   (UART_BASE+0x88)
 #define UART_TDR    (UART_BASE+0x8C)
 
-void uart_putc(unsigned int ch)
-{
+void uart_putc(unsigned int ch) {
 	while(UART_MSR & 0x20);
 	UART_RBRTHRDLL = ch;
 }
@@ -111,7 +110,7 @@ void switch_vpu_to_pllc() {
 
 	A2W_PLLC_FRAC = A2W_PASSWORD | 87380;
 	A2W_PLLC_CTRL = A2W_PASSWORD | 52 | 0x1000;
-	
+
 	A2W_PLLC_ANA3 = A2W_PASSWORD | 0x100;
 	A2W_PLLC_ANA2 = A2W_PASSWORD | 0x0;
 	A2W_PLLC_ANA1 = A2W_PASSWORD | 0x144000;
@@ -121,8 +120,8 @@ void switch_vpu_to_pllc() {
 
 	/* hold all */
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
 
 	A2W_PLLC_DIG3 = A2W_PASSWORD | 0x0;
 	A2W_PLLC_DIG2 = A2W_PASSWORD | 0x400000;
@@ -139,16 +138,16 @@ void switch_vpu_to_pllc() {
 	A2W_PLLC_CORE0 = A2W_PASSWORD | 2;
 
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET | CM_PLLC_LOADCORE0_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET | CM_PLLC_LOADCORE0_SET;
 
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
 
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET;
 
 	CM_VPUCTL = CM_PASSWORD | CM_VPUCTL_FRAC_SET | CM_SRC_OSC | CM_VPUCTL_GATE_SET;
 	CM_VPUDIV = CM_PASSWORD | (4 << 12);
@@ -174,16 +173,16 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	uart_init();
 
 	printf(
-		"==================================================================\n"
-		"::\n"
-		":: kFW for bcm270x, Copyright 2016-2017 rpi-open-firmware authors \n"
-		"::\n"
-		":: BUILDATE  : %s %s \n"
-		":: BUILDSTYLE: %s \n"
-		"::\n"
-		"==================================================================\n",
-		__DATE__, __TIME__,
-		"OPENSOURCE"
+	    "==================================================================\n"
+	    "::\n"
+	    ":: kFW for bcm270x, Copyright 2016-2017 rpi-open-firmware authors \n"
+	    "::\n"
+	    ":: BUILDATE  : %s %s \n"
+	    ":: BUILDSTYLE: %s \n"
+	    "::\n"
+	    "==================================================================\n",
+	    __DATE__, __TIME__,
+	    "OPENSOURCE"
 	);
 
 	printf("CPUID    = 0x%X\n", cpuid);
