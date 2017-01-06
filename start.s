@@ -30,14 +30,20 @@ Exception names are from the public release from:
 empty_space:
 	.space 0x200
 
-.include "ghetto.s"
+/* MMIO-mapped registers for the interrupt table */
+
+.set IC0_BASE, 0x7e002000
+.set IC0_VADDR, 0x7e002030
+
+.set IC1_BASE, 0x7e002800
+.set IC1_VADDR, 0x7e002830
 
 /* main entry point */
 
 .globl _start
 .align 2
 _start:
-		version r0
+	version r0
 	mov r5, r0
 
 	/* vectors */
@@ -132,34 +138,6 @@ unmask_all:
 	lea r1, _start
 
 	bl _main
-
-/************************************************************
- * Debug
- ************************************************************/
-
-blinker:
-	mov r1, #GPFSEL1
-	ld r0, (r1)
-	and r0, #(~(7<<18))
-	or r0, #(1<<18)
-	st r0, (r1)
-	mov r1, #GPSET0
-	mov r2, #GPCLR0
-	mov r3, #(1<<16)
-loop:
-	st r3, (r1)
-	mov r0, #0
-delayloop1:
-	add r0, #1
-	cmp r0, #0x100000
-	bne delayloop1
-	st r3, (r2)
-	mov r0, #0
-delayloop2:
-	add r0, #1
-	cmp r0, #0x100000
-	bne delayloop2
-	b loop
 
 /************************************************************
  * Exception Handling
