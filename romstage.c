@@ -41,8 +41,7 @@ uint32_t g_CPUID;
 #define UART_ITOP   (UART_BASE+0x88)
 #define UART_TDR    (UART_BASE+0x8C)
 
-void uart_putc(unsigned int ch)
-{
+void uart_putc(unsigned int ch) {
 	while(UART_MSR & 0x20);
 	UART_RBRTHRDLL = ch;
 }
@@ -51,26 +50,26 @@ void uart_init(void) {
 	unsigned int ra = GP_FSEL1;
 	ra &= ~(7 << 12);
 	ra |= 4 << 12;
-        ra &= ~(7 << 15);
-        ra |= 4 << 15;
+	ra &= ~(7 << 15);
+	ra |= 4 << 15;
 	GP_FSEL1 = ra;
 
-        mmio_write32(UART_CR, 0);
+	mmio_write32(UART_CR, 0);
 
-        GP_PUD = 0;
+	GP_PUD = 0;
 	udelay(150);
 	GP_PUDCLK0 = (1 << 14) | (1 << 15);
 	udelay(150);
 	GP_PUDCLK0 = 0;
 
-        CM_UARTDIV = CM_PASSWORD | 0x6666;
-        CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET | CM_UARTCTL_ENAB_SET;
+	CM_UARTDIV = CM_PASSWORD | 0x6666;
+	CM_UARTCTL = CM_PASSWORD | CM_SRC_OSC | CM_UARTCTL_FRAC_SET | CM_UARTCTL_ENAB_SET;
 
-        mmio_write32(UART_ICR, 0x7FF);
-        mmio_write32(UART_IBRD, 1);
-        mmio_write32(UART_FBRD, 40);
-        mmio_write32(UART_LCRH, 0x70);
-        mmio_write32(UART_CR, 0x301);
+	mmio_write32(UART_ICR, 0x7FF);
+	mmio_write32(UART_IBRD, 1);
+	mmio_write32(UART_FBRD, 40);
+	mmio_write32(UART_LCRH, 0x70);
+	mmio_write32(UART_CR, 0x301);
 }
 
 void led_init(void) {
@@ -111,7 +110,7 @@ void switch_vpu_to_pllc() {
 
 	A2W_PLLC_FRAC = A2W_PASSWORD | 87380;
 	A2W_PLLC_CTRL = A2W_PASSWORD | 52 | 0x1000;
-	
+
 	A2W_PLLC_ANA3 = A2W_PASSWORD | 0x100;
 	A2W_PLLC_ANA2 = A2W_PASSWORD | 0x0;
 	A2W_PLLC_ANA1 = A2W_PASSWORD | 0x144000;
@@ -121,8 +120,8 @@ void switch_vpu_to_pllc() {
 
 	/* hold all */
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
 
 	A2W_PLLC_DIG3 = A2W_PASSWORD | 0x0;
 	A2W_PLLC_DIG2 = A2W_PASSWORD | 0x400000;
@@ -139,16 +138,16 @@ void switch_vpu_to_pllc() {
 	A2W_PLLC_CORE0 = A2W_PASSWORD | 2;
 
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET | CM_PLLC_LOADCORE0_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET | CM_PLLC_LOADCORE0_SET;
 
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET | CM_PLLC_HOLDCORE0_SET;
 
 	CM_PLLC = CM_PASSWORD | CM_PLLC_DIGRST_SET |
-		CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
-		CM_PLLC_HOLDCORE1_SET;
+	          CM_PLLC_HOLDPER_SET | CM_PLLC_HOLDCORE2_SET |
+	          CM_PLLC_HOLDCORE1_SET;
 
 	CM_VPUCTL = CM_PASSWORD | CM_VPUCTL_FRAC_SET | CM_SRC_OSC | CM_VPUCTL_GATE_SET;
 	CM_VPUDIV = CM_PASSWORD | (4 << 12);
@@ -174,16 +173,16 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	uart_init();
 
 	printf(
-		"=========================================================\n"
-		"::\n"
-		":: kFW for bcm2708, Copyright 2016, Kristina Brooks. \n"
-		"::\n"
-		":: BUILDATE  : %s %s \n"
-		":: BUILDSTYLE: %s \n"
-		"::\n"
-		"=========================================================\n",
-		__DATE__, __TIME__,
-		"OPENSOURCE"
+	    "=========================================================\n"
+	    "::\n"
+	    ":: kFW for bcm2708, Copyright 2016, Kristina Brooks. \n"
+	    "::\n"
+	    ":: BUILDATE  : %s %s \n"
+	    ":: BUILDSTYLE: %s \n"
+	    "::\n"
+	    "=========================================================\n",
+	    __DATE__, __TIME__,
+	    "OPENSOURCE"
 	);
 
 	printf("CPUID    = 0x%X\n", cpuid);

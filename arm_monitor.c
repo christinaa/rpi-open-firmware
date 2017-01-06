@@ -25,8 +25,8 @@ First stage monitor.
  */
 void arm_monitor_interrupt() {
 	printf("VPU MBOX rcv: 0x%X, cnf 0x%X\n",
-		ARM_1_MAIL1_RD,
-		ARM_1_MAIL1_CNF);
+	       ARM_1_MAIL1_RD,
+	       ARM_1_MAIL1_CNF);
 }
 
 void monitor_start() {

@@ -15,7 +15,7 @@ extern void udelay(uint32_t time);
 
 static inline void __attribute__((noreturn)) hang_cpu() {
 	__asm__ __volatile__ (
-		"wfi\n"
+	    "wfi\n"
 	);
 
 	/* in case the above fails */

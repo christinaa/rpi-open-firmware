@@ -15,7 +15,7 @@ void _firmware_rendezvous() {
 
 	*comm1 = 0xCAFEEEEE;
 
-	/* 
+	/*
 	 * check if we have peripheral access
 	 * if so, we don't need the VPU anymore
 	 */

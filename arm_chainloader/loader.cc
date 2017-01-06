@@ -37,7 +37,7 @@ extern "C" {
 }
 
 static_assert((MEM_USABLE_START+0x800000) < KERNEL_LOAD_ADDRESS,
-	"memory layout would not allow for kernel to be loaded at KERNEL_LOAD_ADDRESS, please check memory_map.h");
+              "memory layout would not allow for kernel to be loaded at KERNEL_LOAD_ADDRESS, please check memory_map.h");
 
 struct LoaderImpl {
 	inline bool file_exists(const char* path) {
@@ -50,7 +50,7 @@ struct LoaderImpl {
 			return false;
 
 		/* read entire file into buffer */
-		FIL fp; 
+		FIL fp;
 		f_open(&fp, path, FA_READ);
 
 		unsigned int len = f_size(&fp);
@@ -116,7 +116,8 @@ struct LoaderImpl {
 		//uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
 		//                     0x00, 0x00, 0x00, 0x20 };
 		uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
-							 0x30, 0x00, 0x00, 0x00 };
+		                     0x30, 0x00, 0x00, 0x00
+		                   };
 
 		res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
 		//res = fdt_setprop(v_fdt, memory, "device_type", dtype, strlen(dtype) + 1);
@@ -133,7 +134,7 @@ struct LoaderImpl {
 			bd->stop();
 	}
 
-	LoaderImpl() {	
+	LoaderImpl() {
 		logf("Mounting boot partitiion ...\n");
 		FRESULT r = f_mount(&g_BootVolumeFs, ROOT_VOLUME_PREFIX, 1);
 		if (r != FR_OK) {
@@ -153,7 +154,7 @@ struct LoaderImpl {
 		/* nul terminate it */
 		cmdline[sz - 1] = 0;
 		logf("kernel cmdline: %s\n", cmdline);
-		
+
 		/* load flat device tree */
 		uint8_t* fdt = load_fdt("rpi.dtb", cmdline);
 		if (!fdt) {
@@ -184,7 +185,7 @@ struct LoaderImpl {
 
 		/* fire away */
 		logf("Jumping to the Linux kernel...\n");
-		
+
 		/* this should never return */
 		logf("FDT loaded at %x\n",  reinterpret_cast<uint32_t>(fdt));
 		logf("First few of fdt... %X%X%X%X\n", fdt[0], fdt[1], fdt[2], fdt[3]);

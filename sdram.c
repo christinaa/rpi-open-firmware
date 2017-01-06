@@ -34,7 +34,7 @@ VideoCoreIV SDRAM initialization code.
  PT1:
 	Minimum Idle time after first CKE assertion
 	Minimum CKE low time after completion of power ramp
- PT2: 
+ PT2:
 	DAI Duration
  */
 
@@ -57,13 +57,20 @@ unsigned g_RAMSize = RAM_SIZE_UNKNOWN;
 
 static const char* lpddr2_manufacturer_name(uint32_t mr) {
 	switch (mr) {
-		case 1: return "Samsung";
-		case 2: return "Qimonda";
-		case 3: return "Elpida";
-		case 4: return "Etron";
-		case 5: return "Nanya";
-		case 6: return "Hynix";
-		default: return "Unknown";
+	case 1:
+		return "Samsung";
+	case 2:
+		return "Qimonda";
+	case 3:
+		return "Elpida";
+	case 4:
+		return "Etron";
+	case 5:
+		return "Nanya";
+	case 6:
+		return "Hynix";
+	default:
+		return "Unknown";
 	}
 }
 
@@ -72,11 +79,16 @@ static const char* lpddr2_manufacturer_name(uint32_t mr) {
 
 static unsigned lpddr2_size(uint32_t mr) {
 	switch (mr) {
-		case 0x58: return RAM_SIZE_1GB;
-		case 0x18: return RAM_SIZE_512MB;
-		case 0x14: return RAM_SIZE_256MB;
-		case 0x10: return RAM_SIZE_128MB;
-		default: return RAM_SIZE_UNKNOWN;
+	case 0x58:
+		return RAM_SIZE_1GB;
+	case 0x18:
+		return RAM_SIZE_512MB;
+	case 0x14:
+		return RAM_SIZE_256MB;
+	case 0x10:
+		return RAM_SIZE_128MB;
+	default:
+		return RAM_SIZE_UNKNOWN;
 	}
 }
 
@@ -114,13 +126,13 @@ ALWAYS_INLINE void reset_phy_dll() {
 
 	DPHY_CSR_GLBL_DQ_DLL_RESET = 0x1;
 	APHY_CSR_GLBL_ADDR_DLL_RESET = 0x1;
-	
+
 	/* stall ... */
 	SD_CS;
 	SD_CS;
 	SD_CS;
 	SD_CS;
-	
+
 	DPHY_CSR_GLBL_DQ_DLL_RESET = 0x0;
 	APHY_CSR_GLBL_ADDR_DLL_RESET = 0x0;
 
@@ -234,52 +246,52 @@ void reset_with_timing(lpddr2_timings_t* T) {
 	clkman_update_end();
 
 	SD_SA =
-		(T->tREFI << SD_SA_RFSH_T_LSB)
-			| SD_SA_PGEHLDE_SET
-			| SD_SA_CLKSTOP_SET
-			| SD_SA_POWSAVE_SET
-			| 0x3214;
+	    (T->tREFI << SD_SA_RFSH_T_LSB)
+	    | SD_SA_PGEHLDE_SET
+	    | SD_SA_CLKSTOP_SET
+	    | SD_SA_POWSAVE_SET
+	    | 0x3214;
 
 	SD_SB =
-		SD_SB_REORDER_SET
-			| (T->banklow << SD_SB_BANKLOW_LSB)
-			| SD_SB_EIGHTBANK_SET
-			| (T->rowbits << SD_SB_ROWBITS_LSB)
-			| (T->colbits << SD_SB_COLBITS_LSB);
+	    SD_SB_REORDER_SET
+	    | (T->banklow << SD_SB_BANKLOW_LSB)
+	    | SD_SB_EIGHTBANK_SET
+	    | (T->rowbits << SD_SB_ROWBITS_LSB)
+	    | (T->colbits << SD_SB_COLBITS_LSB);
 
 	logf("SDRAM Addressing Mode: Bank=%d Row=%d Col=%d SB=0x%X\n", T->banklow, T->rowbits, T->colbits, SD_SB);
 
 	SD_SC =
-		(T->tRFCab << SD_SC_T_RFC_LSB)
-			| (T->tRRD << SD_SC_T_RRD_LSB)
-			| (T->tWR << SD_SC_T_WR_LSB)
-			| (T->tWTR << SD_SC_T_WTR_LSB)
-			| (3 << SD_SC_WL_LSB);
+	    (T->tRFCab << SD_SC_T_RFC_LSB)
+	    | (T->tRRD << SD_SC_T_RRD_LSB)
+	    | (T->tWR << SD_SC_T_WR_LSB)
+	    | (T->tWTR << SD_SC_T_WTR_LSB)
+	    | (3 << SD_SC_WL_LSB);
 
 	SD_SD =
-		(T->tRPab << SD_SD_T_RPab_LSB)
-			| (T->tRC << SD_SD_T_RC_LSB)
-			| (T->tXP << SD_SD_T_XP_LSB)
-			| (T->tRASmin << SD_SD_T_RAS_LSB)
-			| (T->tRPpb << SD_SD_T_RPpb_LSB)
-			| (T->tRCD << SD_SD_T_RCD_LSB);
+	    (T->tRPab << SD_SD_T_RPab_LSB)
+	    | (T->tRC << SD_SD_T_RC_LSB)
+	    | (T->tXP << SD_SD_T_XP_LSB)
+	    | (T->tRASmin << SD_SD_T_RAS_LSB)
+	    | (T->tRPpb << SD_SD_T_RPpb_LSB)
+	    | (T->tRCD << SD_SD_T_RCD_LSB);
 
 	SD_SE =
-		(1 << SD_SE_RL_EN_LSB)
-			| (4 << SD_SE_RL_LSB)
-			| (T->tFAW << SD_SE_T_FAW_LSB)
-			| (T->tRTP << SD_SE_T_RTP_LSB)
-			| (T->tXSR << SD_SE_T_XSR_LSB);
+	    (1 << SD_SE_RL_EN_LSB)
+	    | (4 << SD_SE_RL_LSB)
+	    | (T->tFAW << SD_SE_T_FAW_LSB)
+	    | (T->tRTP << SD_SE_T_RTP_LSB)
+	    | (T->tXSR << SD_SE_T_XSR_LSB);
 
 	SD_PT1 =
-		(T->tINIT3 << SD_PT1_T_INIT3_LSB)
-			| (T->tINIT1 << SD_PT1_T_INIT1_LSB);
+	    (T->tINIT3 << SD_PT1_T_INIT3_LSB)
+	    | (T->tINIT1 << SD_PT1_T_INIT1_LSB);
 
 	SD_PT2 =
-		T->tINIT5 << SD_PT2_T_INIT5_LSB;
+	    T->tINIT5 << SD_PT2_T_INIT5_LSB;
 
 	SD_MRT =
-		0x3 << SD_MRT_T_MRW_LSB;
+	    0x3 << SD_MRT_T_MRW_LSB;
 
 	reset_phy_dll();
 
@@ -293,10 +305,10 @@ void reset_with_timing(lpddr2_timings_t* T) {
 
 	/* woo, turn on sdram! */
 	SD_CS =
-		(((4 << SD_CS_ASHDN_T_LSB)
-			| SD_CS_STATEN_SET
-			| SD_CS_EN_SET)
- 		& ~(SD_CS_STOP_SET|SD_CS_STBY_SET)) | SD_CS_RESTRT_SET;
+	    (((4 << SD_CS_ASHDN_T_LSB)
+	      | SD_CS_STATEN_SET
+	      | SD_CS_EN_SET)
+	     & ~(SD_CS_STOP_SET|SD_CS_STBY_SET)) | SD_CS_RESTRT_SET;
 }
 
 unsigned int read_mr(unsigned int addr) {
@@ -311,7 +323,7 @@ unsigned int write_mr(unsigned int addr, unsigned int data, bool wait) {
 	while ((SD_MR & SD_MR_DONE_SET) != SD_MR_DONE_SET) {}
 
 	SD_MR = (addr & 0xFF) | ((data & 0xFF) << 8) | SD_MR_RW_SET;
-	
+
 	if (wait) {
 		unsigned int mrr;
 		while (((mrr = SD_MR) & SD_MR_DONE_SET) != SD_MR_DONE_SET) {}
@@ -320,8 +332,7 @@ unsigned int write_mr(unsigned int addr, unsigned int data, bool wait) {
 			panic("MR write timed out (addr=%d data=0x%X)", addr, data);
 
 		return mrr;
-	}
-	else {
+	} else {
 		return 0;
 	}
 }
@@ -357,8 +368,7 @@ static void switch_to_cprman_clock(unsigned int source, unsigned int div) {
 	logf("busy set, switch complete!\n");
 }
 
-static void init_clkman()
-{
+static void init_clkman() {
 	uint32_t ctrl = 0;
 
 	clkman_update_begin();
@@ -366,7 +376,7 @@ static void init_clkman()
 	clkman_update_end();
 }
 
-	#define CALL_INIT_CLKMAN init_clkman();
+#define CALL_INIT_CLKMAN init_clkman();
 
 
 /*****************************************************************************
@@ -461,8 +471,7 @@ static void selftest_at(uint32_t addr) {
 	}
 }
 
-static void selftest()
-{
+static void selftest() {
 	logf("Starting self test ...\n");
 
 	selftest_at(RT_BASE);
@@ -491,7 +500,7 @@ void sdram_init() {
 	PM_SMPS = PM_PASSWORD | 0x1;
 	A2W_SMPS_LDO1 = A2W_PASSWORD | 0x40000;
 	A2W_SMPS_LDO0 = A2W_PASSWORD | 0x0;
-	
+
 	A2W_XOSC_CTRL |= A2W_PASSWORD | A2W_XOSC_CTRL_DDREN_SET;
 
 	/*
@@ -512,7 +521,7 @@ void sdram_init() {
 	SD_SC = 0x6000431;
 	SD_SD = 0x10000011;
 	SD_SE = 0x10106000;
-	SD_PT1 = 0x0AF002; 
+	SD_PT1 = 0x0AF002;
 	SD_PT2 = 0x8C;
 	SD_MRT = 0x3;
 	SD_CS = 0x200042;
@@ -521,7 +530,7 @@ void sdram_init() {
 	logf("waiting for SDUP (%X) ...\n", SD_CS);
 	for (;;) if (SD_CS & SD_CS_SDUP_SET) break;
 	logf("SDRAM controller has arrived! (%X)\n", SD_CS);
-	
+
 	/* RL = 6 / WL = 3 */
 	write_mr(LPDDR2_MR_DEVICE_FEATURE_2, 4, false);
 	calibrate_pvt_early();
@@ -542,9 +551,9 @@ void sdram_init() {
 	g_RAMSize = lpddr2_size(bc);
 
 	logf("SDRAM Type: %s %s LPDDR2 (BC=0x%X)\n",
-		lpddr2_manufacturer_name(vendor_id),
-		size_to_string[g_RAMSize],
-		bc);
+	     lpddr2_manufacturer_name(vendor_id),
+	     size_to_string[g_RAMSize],
+	     bc);
 
 	if (g_RAMSize == RAM_SIZE_UNKNOWN)
 		panic("unknown ram size (MR8 response was 0x%X)", bc);
@@ -564,8 +573,7 @@ void sdram_init() {
 		g_InitSdramParameters.colbits = 3;
 		g_InitSdramParameters.rowbits = 3;
 		g_InitSdramParameters.banklow = 3;
-	}
-	else if (g_RAMSize == RAM_SIZE_512MB) {
+	} else if (g_RAMSize == RAM_SIZE_512MB) {
 		logf("*** USING LOW tREFI (~7.8us) FOR 512MB, YOUR RAM MAY LEAK!!!!\n");
 
 		g_InitSdramParameters.colbits = 2;
