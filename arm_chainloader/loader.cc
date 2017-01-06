@@ -32,9 +32,7 @@ FATFS g_BootVolumeFs;
 #define DTB_LOAD_ADDRESS    0x20000000
 #define KERNEL_LOAD_ADDRESS 0x2000000
 
-extern "C" {
-	void boot_linux(int zero, int machineID, void* dtb, void* kernel);
-}
+typedef void (*linux_t)(uint32_t, uint32_t, void*);
 
 static_assert((MEM_USABLE_START+0x800000) < KERNEL_LOAD_ADDRESS,
 	"memory layout would not allow for kernel to be loaded at KERNEL_LOAD_ADDRESS, please check memory_map.h");
@@ -170,6 +168,9 @@ struct LoaderImpl {
 			panic("error reading zImage");
 		}
 
+		/* zImage is actually a function pointer; see the typedef */
+		linux_t kernel = reinterpret_cast<linux_t>(zImage);
+
 		logf("zImage loaded at 0x%X\n", (unsigned int)zImage);
 
 		logf("First few of zImage.. %X%X%X%X\n", zImage[0], zImage[1], zImage[2], zImage[3]);
@@ -188,7 +189,7 @@ struct LoaderImpl {
 		/* this should never return */
 		logf("FDT loaded at %x\n",  reinterpret_cast<uint32_t>(fdt));
 		logf("First few of fdt... %X%X%X%X\n", fdt[0], fdt[1], fdt[2], fdt[3]);
-		boot_linux(0, ~0, fdt, zImage);
+		kernel(0, ~0, fdt);
 	}
 };
 
