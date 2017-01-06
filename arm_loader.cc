@@ -23,8 +23,8 @@ ARM initialization stuff.
 
 #define logf(fmt, ...) printf("[ARMLDR:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
-extern char L_arm_code_start;
-extern char L_arm_code_end;
+extern uint8_t L_arm_code_start;
+extern uint8_t L_arm_code_end;
 
 #define ARM_MEMORY_BASE 0xC0000000
 #define ARM_BKPT_OPCODE 0xE1200070
@@ -230,7 +230,7 @@ static void arm_pmap_enter(uint32_t bus_address, uint32_t arm_address) {
 #define ARM_C0_PRIO_UC   0xF0000000
  */
 
-void arm_init() {
+extern "C" void arm_init() {
 	logf("arm init started\n");
 
 	arm_load_code();
