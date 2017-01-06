@@ -42,10 +42,10 @@ struct LoaderImpl {
 		return f_stat(path, NULL) == FR_OK;
 	}
 
-	bool read_file(const char* path, uint8_t*& dest, size_t& size, bool should_alloc = true) {
+	size_t read_file(const char* path, uint8_t*& dest, bool should_alloc = true) {
 		/* ensure file exists first */
 		if(!file_exists(path))
-			return false;
+		    panic("attempted to read %s, but it does not exist", path);
 
 		/* read entire file into buffer */
 		FIL fp; 
@@ -60,27 +60,17 @@ struct LoaderImpl {
 
 		logf("%s: reading %d bytes to 0x%X (allocated=%d) ...\n", path, len, (unsigned int)dest, should_alloc);
 
-		size = len;
-
 		f_read(&fp, dest, len, &len);
 		f_close(&fp);
 
-		return true;
-	}
-
-	inline bool read_file(const char* path, uint8_t*& dest, bool should_alloc = true) {
-		size_t size;
-		return read_file(path, dest, size, should_alloc);
+		return len;
 	}
 
 	uint8_t* load_fdt(const char* filename, uint8_t* cmdline) {
 		/* read device tree blob */
 		uint8_t* fdt = reinterpret_cast<uint8_t*>(DTB_LOAD_ADDRESS);
-		size_t sz;
-
-		if(!read_file(filename, fdt, sz, false)) {
-			panic("error reading fdt");
-		}
+		size_t sz = read_file(filename, fdt, false);
+		logf("FDT loaded at %X\n", (unsigned int) fdt);
 
 		void* v_fdt = reinterpret_cast<void*>(fdt);
 
@@ -92,35 +82,26 @@ struct LoaderImpl {
 
 		/* pass in command line args */
 		res = fdt_open_into(v_fdt, v_fdt, sz + 4096);
-		logf("fdt_open_into(): %d\n", res);
 
 		int node = fdt_path_offset(v_fdt, "/chosen");
-		logf("/chosen node: %d\n", node);
 		if (node < 0)
-			return NULL;
+		    panic("no chosen node in fdt");
+
 		res = fdt_setprop(v_fdt, node, "bootargs", cmdline, strlen((char*) cmdline) + 1);
-		logf("fdt_setprop(): %d\n", res);
 
 		/* pass in a memory map, skipping first meg for bootcode */
 		int memory = fdt_path_offset(v_fdt, "/memory");
 		if(memory < 0)
-			return NULL;
+		    panic("no memory node in fdt");
 
 		/* start the memory map at 1M/16 and grow continuous for 256M
 		 * TODO: does this disrupt I/O? */
 
 		char dtype[] = "memory";
-		//uint32_t memmap[] = { 0x10000, 0x20000000 };
-		//uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
-		//                     0x00, 0x00, 0x00, 0x20 };
-		uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00,
-							 0x30, 0x00, 0x00, 0x00 };
-
+		uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00, 0x30, 0x00, 0x00, 0x00 };
 		res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
-		//res = fdt_setprop(v_fdt, memory, "device_type", dtype, strlen(dtype) + 1);
-		logf("fdt_setprop(): %d\n", res);
 
-		logf("valid fdt loaded at 0x%X\n", (unsigned int)fdt);
+		logf("(valid) fdt loaded at 0x%X\n", (unsigned int)fdt);
 
 		return fdt;
 	}
@@ -139,56 +120,37 @@ struct LoaderImpl {
 		}
 		logf("Boot partition mounted!\n");
 
-		size_t sz;
-
-		/* dump cmdline.txt for test */
+		/* read the command-line null-terminated */
 		uint8_t* cmdline;
+		size_t cmdlen = read_file("cmdline.txt", cmdline);
 
-		if(!read_file("cmdline.txt", cmdline, sz)) {
-			panic("error reading cmdline");
-		}
-
-		/* nul terminate it */
-		cmdline[sz - 1] = 0;
+		cmdline[cmdlen - 1] = 0;
 		logf("kernel cmdline: %s\n", cmdline);
 		
 		/* load flat device tree */
 		uint8_t* fdt = load_fdt("rpi.dtb", cmdline);
-		if (!fdt) {
-			panic("fdt pointer is null");
-		}
 
-		/* after load_fdt is done with it, we don't need it anymore */
+		/* once the fdt contains the cmdline, it is not needed */
 		delete[] cmdline;
 
-		/* read the kernel -- necessarily at fixed address */
+		/* read the kernel as a function pointer at fixed address */
 		uint8_t* zImage = reinterpret_cast<uint8_t*>(KERNEL_LOAD_ADDRESS);
-
-		if(!read_file("zImage", zImage, sz, false)) {
-			panic("error reading zImage");
-		}
-
-		/* zImage is actually a function pointer; see the typedef */
 		linux_t kernel = reinterpret_cast<linux_t>(zImage);
 
-		logf("zImage loaded at 0x%X\n", (unsigned int)zImage);
-
-		logf("First few of zImage.. %X%X%X%X\n", zImage[0], zImage[1], zImage[2], zImage[3]);
+		size_t ksize = read_file("zImage", zImage, false);
+		logf("zImage loaded at 0x%X\n", (unsigned int)kernel);
 
 		/* flush the cache */
 		logf("Flushing....\n")
-		for (uint8_t* i = zImage; i < zImage + sz; i += 32) {
+		for (uint8_t* i = zImage; i < zImage + ksize; i += 32) {
 			__asm__ __volatile__ ("mcr p15,0,%0,c7,c10,1" : : "r" (i) : "memory");
 		}
 
+		/* the eMMC card in particular needs to be reset */
 		teardown_hardware();
 
-		/* fire away */
+		/* fire away -- this shoukd never return */
 		logf("Jumping to the Linux kernel...\n");
-		
-		/* this should never return */
-		logf("FDT loaded at %x\n",  reinterpret_cast<uint32_t>(fdt));
-		logf("First few of fdt... %X%X%X%X\n", fdt[0], fdt[1], fdt[2], fdt[3]);
 		kernel(0, ~0, fdt);
 	}
 };
