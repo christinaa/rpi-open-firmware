@@ -20,14 +20,26 @@ ARM initialization stuff.
 #include <lib/runtime.h>
 #include "hardware.h"
 
-
 #define logf(fmt, ...) printf("[ARMLDR:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
+
+extern uint32_t g_CPUID;
+extern uint32_t g_RAMSize;
 
 extern uint8_t L_arm_code_start;
 extern uint8_t L_arm_code_end;
 
 #define ARM_MEMORY_BASE 0xC0000000
 #define ARM_BKPT_OPCODE 0xE1200070
+
+/*
+ * RPi3: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0488d/CIHBDCJD.html
+ */
+
+/*
+ * This controls AA64nAA32 signal, when set, ARM starts in AArch64 mode. Only applicable
+ * to systems using Cortex-A53.
+ */
+#define ARM_C0_AARCH64 0x00000200
 
 /* XXX: What is this? */
 #define PM_UNK_CFG_CLR 0xFFFCFFFF
@@ -137,6 +149,7 @@ void setup_bridge(bool bresp_cycle) {
 		udelay(300);
 	}
 
+	logf("starting async bridge, ARM should be able to communicate through AXI ...\n");
 	ARM_CONTROL1 &= ~ARM_C1_REQSTOP;
 	udelay(300);
 
@@ -231,10 +244,33 @@ static void arm_pmap_enter(uint32_t bus_address, uint32_t arm_address) {
 #define ARM_C0_PRIO_UC   0xF0000000
  */
 
+static void patch_arm_firmware_data() {
+	volatile firmware_arm_data_t* firmware_data = reinterpret_cast<firmware_arm_data_t*>(ARM_MEMORY_BASE + 32);
+
+	firmware_data->sdram_size = g_RAMSize;
+	firmware_data->vpu_cpuid = g_CPUID;
+}
+
+static void arm_enable_tzpc() {
+	/*
+	 * enable SDRAM security.
+	 * mask: 0xffffe000
+	 */
+	logf("configuring secure SDRAM ...\n");
+	SD_SECSRT0 = 0xC0000000;
+	SD_SECEND0 = 0xC0011FFF;
+	logf("enabling secure SDRAM ...\n");
+	SD_SECSRT0 = 0xC0000001;
+	logf("secure SDRAM enabled ...\n");
+}
+
 extern "C" void arm_init() {
 	logf("arm init started\n");
 
 	arm_load_code();
+	patch_arm_firmware_data();
+
+	//arm_enable_tzpc();
 
 	logf("original memstart: 0x%X\n", *((volatile uint32_t*)ARM_MEMORY_BASE));
 
@@ -256,10 +292,10 @@ extern "C" void arm_init() {
 	 * enable peripheral access, map arm secure bits to axi secure bits 1:1 and
 	 * set the mem size for who knows what reason.
 	 */
-	ARM_CONTROL0 |= 0x008 | ARM_C0_APROTSYST | ARM_C0_SIZ1G | ARM_C0_FULLPERI;
-        ARM_CONTROL1 |= ARM_C1_PERSON;
+	ARM_CONTROL0 |= 0x008 | ARM_C0_APROTPASS | ARM_C0_SIZ1G | ARM_C0_FULLPERI;
+	ARM_CONTROL1 |= ARM_C1_PERSON;
 
-        ARM_IRQ_ENBL3 |= ARM_IE_MAIL;
+	ARM_IRQ_ENBL3 |= ARM_IE_MAIL;
 
 	logf("using C0: 0x%X\n", ARM_CONTROL0);
 

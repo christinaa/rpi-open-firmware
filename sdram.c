@@ -52,7 +52,7 @@ extern uint32_t g_CPUID;
 
 #define logf(fmt, ...) printf("[SDRAM:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
-unsigned g_RAMSize = RAM_SIZE_UNKNOWN;
+uint32_t g_RAMSize = RAM_SIZE_UNKNOWN;
 
 static const char* lpddr2_manufacturer_name(uint32_t mr) {
 	switch (mr) {

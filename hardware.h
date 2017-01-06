@@ -80,3 +80,13 @@ that are missing from the release. This is also used by ARM.
 #define CM_SRC_PLLH_AUX		7
 #define CM_SRC_PLLC_CORE1		8
 #define CM_SRC_PLLC_CORE2		9
+
+typedef struct {
+	uint32_t sdram_size;
+	uint32_t vpu_cpuid;
+	uint32_t reserved[3];
+} firmware_arm_data_t;
+
+#ifdef __arm__
+extern firmware_arm_data_t g_FirmwareData;
+#endif
