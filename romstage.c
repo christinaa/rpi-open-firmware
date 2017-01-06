@@ -174,14 +174,14 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	uart_init();
 
 	printf(
-		"=========================================================\n"
+		"==================================================================\n"
 		"::\n"
-		":: kFW for bcm2708, Copyright 2016, Kristina Brooks. \n"
+		":: kFW for bcm270x, Copyright 2016-2017 rpi-open-firmware authors \n"
 		"::\n"
 		":: BUILDATE  : %s %s \n"
 		":: BUILDSTYLE: %s \n"
 		"::\n"
-		"=========================================================\n",
+		"==================================================================\n",
 		__DATE__, __TIME__,
 		"OPENSOURCE"
 	);
