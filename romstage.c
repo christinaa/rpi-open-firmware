@@ -197,11 +197,12 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	/* bring up SDRAM */
 	sdram_init();
 	printf("SDRAM initialization completed successfully!\n");
-
 	usb_init();
 
 	/* bring up ARM */
 	arm_init();
+
+	/* bring up USB, after CPRMAN is brought up in arm_init */
 
 	/* start vpu monitor */
 	monitor_start();
