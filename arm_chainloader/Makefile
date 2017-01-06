@@ -24,7 +24,6 @@ SRCS = \
 	../lib/panic.c \
 	../lib/udelay.c \
 	../lib/tlsf/tlsf.c \
-	firmware_rendezvous.c \
 	minicxx.cc \
 	loader.cc \
 	main.c

@@ -266,18 +266,4 @@ void arm_init() {
 	enable_power();
 	/* start io bridge */
 	setup_bridge(true);
-	logf("polling ARM state ...\n");
-
-	volatile uint32_t* arm_membase = (volatile uint32_t*)ARM_MEMORY_BASE;
-
-	/* skip vectors and get to comm chan */
-	arm_membase += 8;
-
-	for (;;/*int i = 0; i < 10; i++*/) {
-		if (arm_membase[3] == VPU_KILL_COMMAND) {
-			return;
-		}
-		logf("0x%X 0x%X 0x%X 0x%X\n", arm_membase[0], arm_membase[1], arm_membase[2], arm_membase[3]);
-		udelay(5000);
-	}
 }

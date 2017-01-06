@@ -31,6 +31,9 @@ static void heap_init() {
 }
 
 void main() {
+	/* wait for peripheral access */
+	while(ARM_ID != ARM_IDVAL);
+
 	logf("Started on ARM, continuing boot from here ...\n");
 
 	heap_init();

@@ -37,12 +37,6 @@ _start:
 	nop
 	nop
 
-	/* comm chan */
-	nop
-	nop
-	nop
-	nop
-
 L_all_cores_start:
         /* check CPU id */
 	mrc p15, 0, r0, c0, c0, 5	@ read MPIDR
@@ -60,7 +54,7 @@ L_core0:
         orr r0, r0, #1
         mcr p15, 0, r0, c1, c1, 0
 
-	b _firmware_rendezvous
+	b main
 
 L_deadloop:
 	b L_deadloop

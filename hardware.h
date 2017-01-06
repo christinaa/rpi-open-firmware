@@ -20,8 +20,6 @@ that are missing from the release. This is also used by ARM.
 
 #pragma once
 
-#define VPU_KILL_COMMAND 0xAAAAFFFF
-
 #define VC4_PERIPH_BASE 0x7E000000
 #define ARM_PERIPH_BASE 0x3F000000
 
