@@ -40,13 +40,13 @@ that are missing from the release. This is also used by ARM.
 #define mmio_read32(addr) HW_REGISTER_RW(addr)
 #define mmio_write32(addr, value) (HW_REGISTER_RW(addr) = value)
 
-#include "hardware_vc4.h"
+#include "broadcom/hardware_vc4.h"
 
 /*
  * this is not included by hardware_vc4.h
  */
-#include "bcm2708_chip/aux_io.h"
-#include "bcm2708_chip/testbus.h"
+#include "broadcom/bcm2708_chip/aux_io.h"
+#include "broadcom/bcm2708_chip/testbus.h"
 
 #define RAM_SIZE_1GB 0
 #define RAM_SIZE_512MB 1
