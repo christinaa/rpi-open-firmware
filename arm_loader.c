@@ -64,7 +64,7 @@ static void enable_power() {
 	udelay(10);
 	PM_PROC = pmv;
 
-	logf("POWUP PM_PROC: 0x%X\n", PM_PROC); 
+	logf("POWUP PM_PROC: 0x%X\n", PM_PROC);
 
 	/* wait for POWOK */
 	logf("waiting for power up ...\n");
@@ -80,7 +80,7 @@ static void enable_power() {
 			PM_PROC = pmv;
 		}
 	}
-	
+
 	pmv |= PM_PROC_ISPOW_SET;
 	PM_PROC = pmv;
 
@@ -116,7 +116,7 @@ static uint32_t g_BrespTab[] = {
 static void do_bresp_cycle() {
 	/* my little axi - peripherals are magic */
 	logf("Cycling AXI bits ...\n\t");
-	
+
 	for (int i = 0; i < sizeof(g_BrespTab)/sizeof(g_BrespTab[0]); i++) {
 		bresp_cycle_write(g_BrespTab[i]);
 
@@ -129,7 +129,7 @@ static void do_bresp_cycle() {
 
 void setup_bridge(bool bresp_cycle) {
 	logf("setting up async bridge ...\n");
- 
+
 	if (bresp_cycle) {
 		assert_global_reset();
 		do_bresp_cycle();
@@ -140,9 +140,9 @@ void setup_bridge(bool bresp_cycle) {
 	ARM_CONTROL1 &= ~ARM_C1_REQSTOP;
 	udelay(300);
 
-	if (!bresp_cycle) 
+	if (!bresp_cycle)
 		assert_global_reset();
-	
+
 	logf("bridge init done, PM_PROC is now: 0x%X!\n", PM_PROC);
 }
 
@@ -209,8 +209,8 @@ static void arm_load_code() {
 		uint8_t* mem8 = (uint8_t*)(mem);
 		if (start[i] != mem8[i])
 			panic("copy failed at 0x%X expected 0x%X, got 0x%X", (uint32_t)&mem8[i],
-				*((uint32_t*)&mem8[i]),
-				*((uint32_t*)&start[i]));
+			      *((uint32_t*)&mem8[i]),
+			      *((uint32_t*)&start[i]));
 	}
 }
 
@@ -219,7 +219,7 @@ static void arm_pmap_enter(uint32_t bus_address, uint32_t arm_address) {
 	uint32_t index = arm_address >> 24;
 	uint32_t pte = bus_address >> 21;
 
-	tte[index] = pte; 
+	tte[index] = pte;
 
 	//logf("Translation: [0x%X => 0x%X] 0x%X => 0x%X\n", index * 4, bus_address >> 21, bus_address, arm_address);
 }
@@ -256,9 +256,9 @@ void arm_init() {
 	 * set the mem size for who knows what reason.
 	 */
 	ARM_CONTROL0 |= 0x008 | ARM_C0_APROTSYST | ARM_C0_SIZ1G | ARM_C0_FULLPERI;
-        ARM_CONTROL1 |= ARM_C1_PERSON;
+	ARM_CONTROL1 |= ARM_C1_PERSON;
 
-        ARM_IRQ_ENBL3 |= ARM_IE_MAIL;
+	ARM_IRQ_ENBL3 |= ARM_IE_MAIL;
 
 	logf("using C0: 0x%X\n", ARM_CONTROL0);
 
