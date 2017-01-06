@@ -66,12 +66,12 @@ static_assert(sizeof(Mbr) >= 512, "What the fuck");
 
 static const char* mbr_fs_to_string(int fs) {
 	switch (fs) {
-		case MBR_FAT32: return "FAT32"; break;
-		case MBR_FAT32_INT13: return "FAT32-INT13"; break;
-		case MBR_FAT16_INT13: return "FAT16-INT13"; break;
-		case MBR_FAT16: return "FAT16"; break;
-		case MBR_LINUX: return "Linux (ext2/ext3)"; break;
-		case MBR_NTFS: return "NTFS"; break;
+		case MBR_FAT32: return "FAT32"; 
+		case MBR_FAT32_INT13: return "FAT32-INT13"; 
+		case MBR_FAT16_INT13: return "FAT16-INT13";
+		case MBR_FAT16: return "FAT16";
+		case MBR_LINUX: return "Linux (ext2/ext3)";
+		case MBR_NTFS: return "NTFS";
 		default: return "<Unknown>";
 	}
 }
