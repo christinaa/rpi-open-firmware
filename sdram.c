@@ -1,5 +1,5 @@
 /*=============================================================================
-Copyright (C) 2016 Kristina Brooks
+Copyright (C) 2016-2017 Authors of rpi-open-firmware
 Copyright (C) 2016 Julian Brown
 All rights reserved.
 

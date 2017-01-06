@@ -1,5 +1,5 @@
 /*=============================================================================
-Copyright (C) 2016 Kristina Brooks
+Copyright (C) 2016-2017 Authors of rpi-open-firmware
 All rights reserved.
 
 This program is free software; you can redistribute it and/or
