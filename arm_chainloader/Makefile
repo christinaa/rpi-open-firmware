@@ -26,6 +26,7 @@ SRCS = \
 	../lib/cxx_runtime.c \
 	../lib/tlsf/tlsf.c \
 	loader.cc \
+	trap.cc \
 	main.c
 
 ARCH = armv6zk

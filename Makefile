@@ -17,6 +17,10 @@ SRCS = \
 	lib/udelay.c \
 	lib/memcpy.c \
 	lib/cxx_runtime.c \
+	drivers/IODevice.cc \
+	drivers/BCM2708PowerManagement.cc \
+	drivers/BCM2708UsbPhy.cc \
+	BCM2708PlatformStartup.cc \
 	chainloader_inc.s
 
 ARCH = vc4
@@ -44,9 +48,9 @@ AS = $(CC)
 OBJCOPY = $(CROSS_COMPILE)objcopy
 LINKFLAGS = -nostdlib -nostartfiles -Wl,--build-id=none -T linker.lds
 
-CFLAGS = -c -nostdlib -std=c11 -fsingle-precision-constant -Wdouble-promotion -D__VIDEOCORE4__ -I./vc4_include/ -I./
+CFLAGS = -c -nostdlib -Wno-multichar -std=c11 -fsingle-precision-constant -Wdouble-promotion -D__VIDEOCORE4__ -I./vc4_include/ -I./
 ASFLAGS = -c -nostdlib -x assembler-with-cpp -D__VIDEOCORE4__ -I./vc4_include/ -I./
-CXXFLAGS = -c -nostdlib -std=c++11 -fno-exceptions -fno-rtti -D__VIDEOCORE4__ -I./vc4_include/ -I./
+CXXFLAGS = -c -nostdlib -Wno-multichar -std=c++11 -fno-exceptions -fno-rtti -D__VIDEOCORE4__ -I./vc4_include/ -I./
 
 HEADERS := \
 	$(shell find . -type f -name '*.h') \

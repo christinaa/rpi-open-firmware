@@ -22,6 +22,8 @@ SECTIONS
 	.init_array : {
 		*(.init_array)
 		*(.init_array.*)
+		*(.ctors)
+		*(.ctors.*)
 	}
 	PROVIDE (__init_array_end = .);
 
