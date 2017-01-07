@@ -54,8 +54,13 @@ struct LoaderImpl {
 		unsigned int len = f_size(&fp);
 
 		if(should_alloc) {
-			uint8_t* buffer = new uint8_t[len];
+			/*
+			 * since this can be used for strings, there's no harm in reserving an
+			 * extra byte for the null terminator and appending it.
+			 */
+			uint8_t* buffer = new uint8_t[len + 1];
 			dest = buffer;
+			buffer[len] = 0;
 		}
 
 		logf("%s: reading %d bytes to 0x%X (allocated=%d) ...\n", path, len, (unsigned int)dest, should_alloc);
@@ -124,7 +129,6 @@ struct LoaderImpl {
 		uint8_t* cmdline;
 		size_t cmdlen = read_file("cmdline.txt", cmdline);
 
-		cmdline[cmdlen - 1] = 0;
 		logf("kernel cmdline: %s\n", cmdline);
 
 		/* load flat device tree */
