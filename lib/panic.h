@@ -16,6 +16,8 @@ extern void panic(const char* fmt,  ...)
 #define panic(ex, ...) \
 	(panic)(# ex "@" PANIC_LOCATION, ## __VA_ARGS__)
 
+#define assert(x) if (!(x)) { panic("assertion '%s' failed", #x); }
+
 #ifdef __cplusplus
 }
 #endif

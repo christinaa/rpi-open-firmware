@@ -161,6 +161,7 @@ void switch_vpu_to_pllc() {
 extern void sdram_init();
 extern void arm_init();
 extern void monitor_start();
+extern void PEStartPlatform();
 
 void print_crap() {
 	printf("TB_BOOT_OPT = 0x%X\n", TB_BOOT_OPT);
@@ -197,6 +198,8 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	/* bring up SDRAM */
 	sdram_init();
 	printf("SDRAM initialization completed successfully!\n");
+
+	PEStartPlatform();
 
 	/* bring up ARM */
 	arm_init();

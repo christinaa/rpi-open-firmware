@@ -18,7 +18,7 @@ ARM initialization stuff.
 =============================================================================*/
 
 #include <lib/runtime.h>
-#include "hardware.h"
+#include <drivers/BCM2708PowerManagement.hpp>
 
 #define logf(fmt, ...) printf("[ARMLDR:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
@@ -44,72 +44,14 @@ extern uint8_t L_arm_code_end;
 /* XXX: What is this? */
 #define PM_UNK_CFG_CLR 0xFFFCFFFF
 
-static bool power_wait_bit(uint32_t bit) {
-	for (int i = 0; i < 20; i++) {
-		if (PM_PROC & bit) {
-			return true;
-		}
-		udelay(100);
-	}
-	return false;
-}
-
 static inline void assert_global_reset() {
-	logf("RSTN ...\n");
-	PM_PROC |= PM_PASSWORD | PM_PROC_ARMRSTN_SET;
-	udelay(300);
+	PowerManagementDomain::getDeviceForDomain(kCprPowerDomainARM)->setReset();
 }
 
 static void enable_power() {
-	uint32_t pmv;
-
-	logf("INIT PM_PROC: 0x%X\n", PM_PROC);
-
-	logf("requesting power up ...\n");
-
-	/* deassert all reset lines */
-	pmv = ((PM_PROC & PM_PROC_ARMRSTN_CLR) & PM_UNK_CFG_CLR) | PM_PASSWORD;
-
-	PM_PROC = pmv;
-
-	pmv |= PM_PROC_POWUP_SET;
-	udelay(10);
-	PM_PROC = pmv;
-
-	logf("POWUP PM_PROC: 0x%X\n", PM_PROC);
-
-	/* wait for POWOK */
-	logf("waiting for power up ...\n");
-	for (int i = 1; i < 5; i++) {
-		if (!power_wait_bit(PM_PROC_POWOK_SET)) {
-			/* only go up to 3 */
-			if (i == 4) {
-				panic("timed out waiting for power up, state of PM_PROC is: 0x%X", PM_PROC);
-			}
-
-			pmv = (pmv & PM_UNK_CFG_CLR) | (i << PM_PROC_CFG_LSB);
-			logf("timed out, trying different CFG: 0x%X \n", pmv);
-			PM_PROC = pmv;
-		}
-	}
-
-	pmv |= PM_PROC_ISPOW_SET;
-	PM_PROC = pmv;
-
-	pmv |= PM_PROC_MEMREP_SET;
-	PM_PROC = pmv;
-
-	logf("waiting for MRDONE ...\n");
-	if (!power_wait_bit(PM_PROC_MRDONE_SET)) {
-		panic("timed out waiting for MRDONE, state of PM_PROC is: 0x%X", PM_PROC);
-	}
-
-	logf("setting ISFUNC ...\n");
-
-	pmv |= PM_PROC_ISFUNC_SET;
-	PM_PROC = pmv;
-
-	logf("ARM power domain initialized succesfully, state of PM_PROC is: 0x%X!\n", PM_PROC);
+	PowerManagementDomain* armPm = PowerManagementDomain::getDeviceForDomain(kCprPowerDomainARM);
+	assert(armPm);
+	armPm->start();
 }
 
 static void bresp_cycle_write(uint32_t bits) {

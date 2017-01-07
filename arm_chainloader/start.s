@@ -31,13 +31,13 @@ the boot process.
 _start:
 	/* vectors */
 	b _common_start /* reset */
-	nop /* undefined */
+	b _fleh_undef /* undefined */
 	b _secure_monitor /* swi/smc */
-	nop /* prefetch abort */
-	nop /* data abort */
-	nop /* reserved */
-	nop /* irq */
-	nop /* fiq */
+	b _fleh_prefabt /* prefetch abort */
+	b _fleh_dataabt /* data abort */
+	b _fleh_addrexc /* reserved */
+	b _fleh_irq /* irq */
+	b _fleh_fiq /* fiq */
 
 .globl g_FirmwareData
 g_FirmwareData:
@@ -47,15 +47,46 @@ g_FirmwareData:
 	.long 0 /* Reserved */
 	.long 0 /* Reserved */
 
+#define SaveRegisters() \
+	mov sp, #(MEM_STACK_END); \
+	stmea sp, {r0-lr}^; \
+	str lr, [sp, #60]; \
+	mrs r0, spsr
+	str r0, [sp, #64];
+
+_fleh_undef:
+	SaveRegisters()
+	b sleh_undef
+
+_fleh_prefabt:
+	SaveRegisters()
+	b sleh_prefabt
+
+_fleh_dataabt:
+	SaveRegisters()
+	b sleh_dataabt
+
+_fleh_addrexc:
+	SaveRegisters()
+	b sleh_addrexc
+
+_fleh_irq:
+	SaveRegisters()
+	b sleh_irq
+
+_fleh_fiq:
+	SaveRegisters()
+	b sleh_fiq
+
 _secure_monitor:
 	mrc p15, 0, r0, c1, c1, 0
-	bic	r0, r0, #0x4a /* clear IRQ, EA, nET */
+	//bic	r0, r0, #0x4a /* clear IRQ, EA, nET */
 	orr r0, r0, #1 /* set NS */
 	mcr p15, 0, r0, c1, c1, 0
 
-	mov r0, #((1 << 7) | (1 << 8) | (1 << 6)) /* mask IRQ, AA and FIQ */
-	orr r0, r0, #0x1a /* switch to hypervisor mode */
-	msr spsr_cxfs, r0 
+	//mov r0, #((1 << 7) | (1 << 8) | (1 << 6)) /* mask IRQ, AA and FIQ */
+	//orr r0, r0, #0x1a /* switch to hypervisor mode */
+	//msr spsr_cxfs, r0 
 
 	movs pc, lr
 
@@ -84,17 +115,21 @@ L_armv7_or_higher:
 
 L_setup_monitor:
 	adr	r1, _start
-	mcr	p15, 0, r1, c12, c0, 1 /* MVBAR */
-	mcr p15, 0, r1, c7, c5, 4 /* ISB (ARMv6 compatible way) */
+	//mcr	p15, 0, r1, c12, c0, 1 /* MVBAR */
+	//mcr p15, 0, r1, c7, c5, 4 /* ISB (ARMv6 compatible way) */
+
+	mrc p15, 0, r0, c1, c1, 0
+	orr r0, r0, #1 /* set NS */
+	mcr p15, 0, r0, c1, c1, 0
 
 	mov r12, #1
-	smc 0
+	//smc 0
 	
 L_finish_init:
 	/* enable instruction cache */
-	mrc p15, 0, r0, c1, c0, 0
-	orr r0, r0, #(1<<12)
-	mcr p15, 0, r0, c1, c0, 0
+	//mrc p15, 0, r0, c1, c0, 0
+	//orr r0, r0, #(1<<12)
+	//mcr p15, 0, r0, c1, c0, 0
 
 	mov sp, #(MEM_STACK_END)
 	mov r0, r12
