@@ -153,7 +153,7 @@ struct LoaderImpl {
 		/* the eMMC card in particular needs to be reset */
 		teardown_hardware();
 
-		/* fire away -- this shoukd never return */
+		/* fire away -- this should never return */
 		logf("Jumping to the Linux kernel...\n");
 		kernel(0, ~0, fdt);
 	}
