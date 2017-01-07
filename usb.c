@@ -71,11 +71,11 @@ void usb_init() {
     udelay(300);
     printf("PM_USB = %X\n", PM_USB);
     printf("Clocking..\n");
-    CM_TDCLKEN = CM_PASSWORD | CM_TDCLKEN_USBDFT_SET;
+    //CM_TDCLKEN = CM_PASSWORD | CM_TDCLKEN_USBDFT_SET;
     udelay(300);
     printf("Controlling..\n");
     //USB_MDIO_CSR = 1 << 18;
-    USB_MDIO_GEN = 0;
+    //USB_MDIO_GEN = 0;
     for(;;);
     printf("and mdio..\n");
 
@@ -97,5 +97,8 @@ void usb_init() {
     usb_write(36, 0x10);
     usb_write(0x19, 0x04);
 
+    USB_GUSBCFG = 0x40402700;
+    delay(300);
+    USB_HCFG = 0x20402700;
     printf("USB initialization done!\n");
 }
