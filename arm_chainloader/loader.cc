@@ -29,7 +29,7 @@ Second stage bootloader.
 FATFS g_BootVolumeFs;
 
 #define ROOT_VOLUME_PREFIX "0:"
-#define DTB_LOAD_ADDRESS    0x20000000
+#define DTB_LOAD_ADDRESS    0xF000000
 #define KERNEL_LOAD_ADDRESS 0x2000000
 
 typedef void (*linux_t)(uint32_t, uint32_t, void*);
