@@ -51,9 +51,10 @@ g_FirmwareData:
 	mov sp, #(MEM_STACK_END); \
 	stmea sp, {r0-lr}^; \
 	str lr, [sp, #60]; \
-	mrs r0, spsr
-	str r0, [sp, #64];
-
+	mrs r0, spsr; \
+	str r0, [sp, #64]; \
+	mov r0, sp
+	
 _fleh_undef:
 	SaveRegisters()
 	b sleh_undef

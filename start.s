@@ -116,12 +116,12 @@ L_setup_hw_irq:
 	mov r2, 0x11111111
 	mov r3, #(IC0_BASE + 0x10 + 0x10)
 
-unmask_all:
+/*unmask_all:
 	st r2, (r0)
 	st r2, (r1)
 	add r0, 4
 	add r1, 4
-	ble r0, r3, unmask_all
+	ble r0, r3, unmask_all*/
  
 	/* set interrupt vector bases */
 	mov r3, #0x1B000
