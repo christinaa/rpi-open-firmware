@@ -196,8 +196,19 @@ struct BCM2708PowerDomainImage : BCM2708PowerDomain {
 	void resetPeripheralsUngated() {
 		CM_PERIICTL = CM_PASSWORD | CM_PERIICTL_GATE_SET;
 
-		//IODriverLog("vector op call ...");
-		//vector_op_gated();
+#ifdef __VIDEOCORE4__
+		IODriverLog("calling v16mov gated ...");
+
+		/*
+		 * don't ask me.
+		 */
+		__asm volatile (
+			"v16mov -, 0 REP32\n"
+			"v16mov -, 0\n"
+		);
+#endif
+		
+		IODriverLog("ungating and resetting ...");
 
 		CM_PERIICTL = CM_PASSWORD;
 
