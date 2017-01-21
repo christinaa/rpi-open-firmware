@@ -2,7 +2,7 @@
 
 `rpi-open-firmware` is a small firmware for the [RPi VPU](https://en.wikipedia.org/wiki/VideoCore), capable of initializing UART, VPU PLL (PLLC), and ARM itself. It's intended as a libre replacement for the stock `bootcode.bin` normally loaded from the SD card. A UART cable is highly recommended for the time being, though not strictly necessary. Additionally, there is a second-stage chainloader running on ARM capable of initializing eMMC, FAT, and the Linux kernel.
 
-Linux is confirmed booting on the RPi 2 Model B and RPi 3 Model B. It should work with minimal modifications on [all of the models]. 
+See [issue #31](https://github.com/christinaa/rpi-open-firmware/issues/31) for a compatibility table and related discourse.
 
 Technical discussion occurs in `#raspberrypi-internals` on [Freenode](http://webchat.freenode.net/?channels=#raspberrypi-internals). Please come on IRC before randomly hacking on the codebase :-)
 
