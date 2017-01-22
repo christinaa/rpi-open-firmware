@@ -21,7 +21,12 @@ that are missing from the release. This is also used by ARM.
 #pragma once
 
 #define VC4_PERIPH_BASE 0x7E000000
+
+/* older models need to override this to 0x20000000 */
+
+#ifndef ARM_PERIPH_BASE
 #define ARM_PERIPH_BASE 0x3F000000
+#endif
 
 #define VC4_TO_ARM_PERIPH(addr) ((addr - VC4_PERIPH_BASE) + ARM_PERIPH_BASE)
 

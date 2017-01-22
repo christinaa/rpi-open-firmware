@@ -10,7 +10,7 @@ All Broadcom headers are licensed under 3-Clause BSD License while our code is u
 
 ## Building
 
-As a prerequisite, Julian Brown's [VC4 toolchain](https://github.com/puppeh/vc4-toolchain) is necessary as well as the `arm-none-eabi-` toolchain (Debian package `gcc-arm-none-eabi`). You can tweak the VC4 toolchain path in `CROSS_COMPILE` in `Makefile` and the ARM path in `arm_chainloader/Makefile` if necessary. Contributors should not commit their personal paths. After configuration, run `buildall.sh`. The binary is at `build/bootcode.bin`, ready to be copied to an SD card.
+As a prerequisite, Julian Brown's [VC4 toolchain](https://github.com/puppeh/vc4-toolchain) is necessary as well as the `arm-none-eabi-` toolchain (Debian package `gcc-arm-none-eabi`). You can tweak the VC4 toolchain path in `CROSS_COMPILE` in `Makefile` and the ARM path in `arm_chainloader/Makefile` if necessary. Contributors should not commit their personal paths. Additionally, if building for the BCM2835 (RPi 1, Zero, Compute Moule), change `ARM_PERIPH_BASE` in `./buildall.sh` to `0x20000000`. After configuration, run `buildall.sh`. The binary is at `build/bootcode.bin`, ready to be copied to an SD card.
 
 ### Building on macOS
 

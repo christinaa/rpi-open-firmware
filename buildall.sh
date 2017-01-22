@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export ARM_PERIPH_BASE=0x3F000000
+
 make clean
 cd arm_chainloader
 make clean
