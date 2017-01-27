@@ -46,8 +46,8 @@ struct BCM2708UsbPhy : IODevice {
 		IODriverLog("starting ...");
 
 		/* pseudo code really.. */
-		A2W_XOSC_CTRL |= A2W_PASSWORD | A2W_XOSC_USBEN_SET;
-		while(!(A2W_XOSC_CTRL & A2W_XOSC_USBOK_SET));
+		A2W_XOSC_CTRL |= A2W_PASSWORD | A2W_XOSC_CTRL_USBEN_SET;
+		while(!(A2W_XOSC_CTRL & A2W_XOSC_CTRL_USBOK_SET));
 
 		/* the LAN_RUN pin is GPIO6 according to the schematic */
 		/* edit: it's different between models.
