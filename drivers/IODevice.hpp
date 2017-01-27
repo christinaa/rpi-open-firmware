@@ -43,4 +43,4 @@ struct IODevice {
 
 #define IODriverLog(fmt, ...) driverLog(__FUNCTION__, fmt, ##__VA_ARGS__)
 #define IODriverCreateSingletonInstance(clazz) static clazz __IODriver_static_ ## clazz {}
-#define IODriverConstructor(clazz) clazz() { _beforeInit(); init(); _afterInit(); }
+#define IODriverConstructor(clazz) inline clazz() { _beforeInit(); driverName = #clazz; init(); _afterInit(); }

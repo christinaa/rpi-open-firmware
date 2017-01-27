@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+#define RegToRef(x) reinterpret_cast<volatile uint32_t*>(&x)
+
 extern void udelay(uint32_t time);
 extern void __cxx_init();
 

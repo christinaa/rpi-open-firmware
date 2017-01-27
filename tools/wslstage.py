@@ -9,7 +9,7 @@ import subprocess
 import os
 from StringIO import StringIO
 
-disk_name = 'E'
+disk_name = 'F'
 disk_ready = False
 wmic_output = os.popen('wcmd wmic logicaldisk get caption, filesystem')
 

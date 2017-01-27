@@ -8,6 +8,17 @@
 #include <drivers/IODevice.hpp>
 #include <drivers/BCM2708PowerManagement.hpp>
 
+static IODevice* startDeviceByTag(uint32_t tag) {
+	IODevice* dev = IODevice::findByTag(tag);
+
+	if (!dev) {
+		panic("unable to find device with tag 0x%X in the registry", tag);
+	}
+
+	dev->start();
+	return dev;
+}
+
 extern "C" void PEStartPlatform() {
 	IODevice* imagePm = PowerManagementDomain::getDeviceForDomain(kCprPowerDomainImage);
 	assert(imagePm);
@@ -15,23 +26,18 @@ extern "C" void PEStartPlatform() {
 	assert(usbPm);
 
 	/*
-	 * all devices in the IMAGE domain have to be disabled before
+	 * All devices in the IMAGE domain have to be disabled before
 	 * starting the domain itself.
 	 */
 	usbPm->stop();
-	/*
-	 * enable IMAGE power domain.
-	 */
+	/* Bring up IMAGE power domain */
 	imagePm->start();
-	/*
-	 * enable USB power domain.
-	 */
+	/* Now we can re-enable USB power domain */
 	usbPm->start();
 
-	/*
-	 * start up USB PHY.
-	 */
-	IODevice* usbPhy = IODevice::findByTag('USBP');
-	assert(usbPhy);
-	usbPhy->start();
+	/* Start USB PHY */
+	startDeviceByTag('USBP');
+
+	/* Start ARM */
+	startDeviceByTag('ARMC');
 }

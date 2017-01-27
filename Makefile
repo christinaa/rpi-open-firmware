@@ -9,7 +9,6 @@ SRCS = \
 	start.s \
 	romstage.c \
 	sdram.c \
-	arm_loader.c \
 	arm_monitor.cc \
 	trap.c \
 	lib/xprintf.c \
@@ -20,6 +19,9 @@ SRCS = \
 	drivers/IODevice.cc \
 	drivers/BCM2708PowerManagement.cc \
 	drivers/BCM2708UsbPhy.cc \
+	drivers/BCM2708ArmControl.cc \
+	drivers/BCM2708ClockDomains.cc \
+	drivers/BCM2708Gpio.cc \
 	BCM2708PlatformStartup.cc \
 	chainloader_inc.s
 

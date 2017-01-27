@@ -201,9 +201,6 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 
 	PEStartPlatform();
 
-	/* bring up ARM */
-	arm_init();
-
 	/* start vpu monitor */
 	monitor_start();
 

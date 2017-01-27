@@ -62,33 +62,6 @@ SDHOST driver. This used to be known as ALTMMC.
 #define SDHSTS_TRANSFER_ERROR_MASK      (SDHSTS_CRC7_ERROR|SDHSTS_CRC16_ERROR|SDHSTS_REW_TIME_OUT|SDHSTS_FIFO_ERROR)
 #define SDHSTS_ERROR_MASK               (SDHSTS_CMD_TIME_OUT|SDHSTS_TRANSFER_ERROR_MASK)
 
-#define logf(fmt, ...) printf("[GPIO:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
-
-enum BCM2708PinmuxSetting {
-	kBCM2708PinmuxIn = 0,
-	kBCM2708PinmuxOut = 1,
-	kBCM2708Pinmux_ALT5 = 2,
-	kBCM2708Pinmux_ALT4 = 3,
-	kBCM2708Pinmux_ALT0 = 4,
-	kBCM2708Pinmux_ALT1 = 5,
-	kBCM2708Pinmux_ALT2 = 6,
-	kBCM2708Pinmux_ALT3 = 7
-};
-
-struct BCM2708GPIO {
-
-	static void set(uint32_t pin_num, BCM2708PinmuxSetting setting) {
-		uint32_t* fsel = reinterpret_cast<uint32_t*>(
-		                     reinterpret_cast<uint32_t>(&GP_FSEL0) + (0x4 * (pin_num/10))
-		                 );
-		uint32_t pin_shift = (pin_num % 10) * 3;
-
-
-
-	}
-};
-
-#undef logf
 #define logf(fmt, ...) printf("[EMMC:%s]: " fmt, __FUNCTION__, ##__VA_ARGS__);
 
 #define kIdentSafeClockRate 0x148
