@@ -45,9 +45,11 @@ struct BCM2708UsbPhy : IODevice {
 	virtual void start() override {
 		IODriverLog("starting ...");
 
-		/* pseudo code really.. */
+		/* enable clock */
 		A2W_XOSC_CTRL |= A2W_PASSWORD | A2W_XOSC_CTRL_USBEN_SET;
 		while(!(A2W_XOSC_CTRL & A2W_XOSC_CTRL_USBOK_SET));
+
+		CM_TDCLKEN |= CM_PASSWORD | CM_TDCLKEN_USBDFT_SET;
 
 		/* the LAN_RUN pin is GPIO6 according to the schematic */
 		/* edit: it's different between models.
