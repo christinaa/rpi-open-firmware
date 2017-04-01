@@ -38,7 +38,6 @@ struct BCM2708UsbPhy : IODevice {
 	}
 
 	virtual void usb_write(int reg, uint16_t value) {
-		IODriverLog("Writing 0x%X to reg 0x%X", value, reg);
 		write_bare(reg, value, 0x50020000);
 	}
 
