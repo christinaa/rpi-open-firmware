@@ -158,6 +158,16 @@ void switch_vpu_to_pllc() {
 	CM_TIMERCTL = CM_PASSWORD | CM_SRC_OSC | 0x10;
 }
 
+void set_interrupt(int intno, bool enable) {
+    int offset = 0x10 + ((intno >> 3) << 2);
+    uint32_t slot = 0xF << ((intno & 7) << 2);
+
+    uint32_t v = mmio_read32(IC0_BASE + offset) & ~slot;
+    mmio_write32(IC0_BASE + offset, enable ? v | slot : v);
+
+    printf("%d: %X\n", intno, mmio_read32(IC0_BASE + offset));
+}
+
 extern void sdram_init();
 extern void arm_init();
 extern void monitor_start();
@@ -170,8 +180,13 @@ void print_crap() {
 int _main(unsigned int cpuid, unsigned int load_address) {
 	switch_vpu_to_pllc();
 
-	led_init();
 	uart_init();
+
+	for(int i = 0; i < 64; ++i) {
+	    set_interrupt(i, (i != (125 - 64)) && (i != (121 - 64)) && (i != (120 - 64)) && (i != (73 - 64)) && (i != (96 - 64)));
+	}
+
+	led_init();
 
 	printf(
 	    "==================================================================\n"
