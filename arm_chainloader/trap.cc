@@ -8,14 +8,14 @@
 #include <lib/runtime.h>
 
 struct arm_saved_state {
-	uint32_t	r[13];		/* General purpose register r0-r12 */
-	uint32_t	sp;			/* Stack pointer r13 */
-	uint32_t	lr;			/* Link register r14 */
-	uint32_t	pc;			/* Program counter r15 */
-	uint32_t	cpsr;		/* Current program status register */
-	uint32_t	fsr;		/* Fault status */
-	uint32_t	far;		/* Virtual Fault Address */
-	uint32_t	exception;	/* exception number */
+	uint32_t r[13];	    /* General purpose register r0-r12 */
+	uint32_t sp;	    /* Stack pointer r13 */
+	uint32_t lr;	    /* Link register r14 */
+	uint32_t pc;	    /* Program counter r15 */
+	uint32_t cpsr;	    /* Current program status register */
+	uint32_t fsr;	    /* Fault status */
+	uint32_t far;	    /* Virtual Fault Address */
+	uint32_t exception; /* exception number */
 };
 typedef struct arm_saved_state arm_saved_state_t;
 

@@ -22,8 +22,7 @@ SRCS = \
 	drivers/BCM2708ArmControl.cc \
 	drivers/BCM2708ClockDomains.cc \
 	drivers/BCM2708Gpio.cc \
-	BCM2708PlatformStartup.cc \
-	chainloader_inc.s
+	BCM2708PlatformStartup.cc
 
 ARCH = vc4
 
