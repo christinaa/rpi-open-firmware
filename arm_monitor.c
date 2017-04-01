@@ -32,9 +32,6 @@ void arm_monitor_interrupt() {
 void monitor_start() {
 	printf("Starting IPC monitor ...\n");
 
-	/* dump status */
-	printf("Mailbox status: 0x%X\n", ARM_1_MAIL1_STA);
-
 	/* enable IRQ */
 	ARM_1_MAIL1_CNF = ARM_MC_IHAVEDATAIRQEN;
 
