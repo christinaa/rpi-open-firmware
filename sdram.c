@@ -567,14 +567,10 @@ void sdram_init() {
 	 */
 
 	if (g_RAMSize == RAM_SIZE_1GB) {
-		logf("*** USING LOW tREFI (~7.8us) FOR 1GB, YOUR RAM MAY LEAK!!!!\n");
-
 		g_InitSdramParameters.colbits = 3;
 		g_InitSdramParameters.rowbits = 3;
 		g_InitSdramParameters.banklow = 3;
 	} else if (g_RAMSize == RAM_SIZE_512MB) {
-		logf("*** USING LOW tREFI (~7.8us) FOR 512MB, YOUR RAM MAY LEAK!!!!\n");
-
 		g_InitSdramParameters.colbits = 2;
 	}
 
@@ -582,4 +578,3 @@ void sdram_init() {
 	init_late();
 	selftest();
 }
-
