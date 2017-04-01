@@ -112,12 +112,14 @@ void switch_vpu_to_pllc() {
 	CM_TIMERCTL = CM_PASSWORD | CM_SRC_OSC | 0x10;
 }
 
-void set_interrupt(int intno, bool enable) {
+void set_interrupt(int intno, bool enable, int core) {
+    int base = (core == 0) ? : IC0_BASE : IC1_Base;
+
     int offset = 0x10 + ((intno >> 3) << 2);
     uint32_t slot = 0xF << ((intno & 7) << 2);
 
-    uint32_t v = mmio_read32(IC0_BASE + offset) & ~slot;
-    mmio_write32(IC0_BASE + offset, enable ? v | slot : v);
+    uint32_t v = mmio_read32(base + offset) & ~slot;
+    mmio_write32(base + offset, enable ? v | slot : v);
 }
 
 extern void sdram_init();
@@ -131,8 +133,14 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	uart_init();
 
 	for(int i = 0; i < 64; ++i) {
-	    set_interrupt(i, (i != (125 - 64)) && (i != (121 - 64)) && (i != (120 - 64)) && (i != (73 - 64)) && (i != (96 - 64)));
+	    set_interrupt(i, (i != (125 - 64)) && (i != (121 - 64)) && (i != (120 - 64)) && (i != (73 - 64)) && (i != (96 - 64)), 0);
+	    set_interrupt(i, 0, 1);
 	}
+
+	IC0_VADDR = 0x1B000;
+	IC1_VADDR = 0x1B000;
+
+	__asm__ volatile("ei");
 
 	printf(
 	    "==================================================================\n"

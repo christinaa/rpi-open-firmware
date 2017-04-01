@@ -110,29 +110,6 @@ L_setup_hw_irq:
 	mov r28, #0x1D000 
 	mov sp, #0x1C000
 
-	/* mask interrupts */
-	mov r0, #(IC0_BASE + 0x10)
-	mov r1, #(IC1_BASE + 0x10)
-	mov r2, 0x00000000
-	mov r3, #(IC0_BASE + 0x10 + 0x20)
-
-mask_all:
-	st r2, (r0)
-	st r2, (r1)
-	add r0, 4
-	add r1, 4
-	ble r0, r3, mask_all
- 
-	/* set interrupt vector bases */
-	mov r3, #0x1B000
-	mov r0, #IC0_VADDR
-	st r3, (r0)
-	mov r0, #IC1_VADDR
-	st r3, (r0)
-
-	/* enable interrupts */
-	ei
-
 	/* jump to C code */
 	mov r0, r5
 	lea r1, _start
