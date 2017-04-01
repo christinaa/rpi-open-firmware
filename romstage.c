@@ -134,8 +134,6 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	    set_interrupt(i, (i != (125 - 64)) && (i != (121 - 64)) && (i != (120 - 64)) && (i != (73 - 64)) && (i != (96 - 64)));
 	}
 
-	led_init();
-
 	printf(
 	    "==================================================================\n"
 	    "::\n"
