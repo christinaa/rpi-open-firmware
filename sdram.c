@@ -54,25 +54,6 @@ extern uint32_t g_CPUID;
 
 uint32_t g_RAMSize = RAM_SIZE_UNKNOWN;
 
-static const char* lpddr2_manufacturer_name(uint32_t mr) {
-	switch (mr) {
-	case 1:
-		return "Samsung";
-	case 2:
-		return "Qimonda";
-	case 3:
-		return "Elpida";
-	case 4:
-		return "Etron";
-	case 5:
-		return "Nanya";
-	case 6:
-		return "Hynix";
-	default:
-		return "Unknown";
-	}
-}
-
 #define MR8_DENSITY_SHIFT	0x2
 #define MR8_DENSITY_MASK	(0xF << 0x2)
 
@@ -549,10 +530,10 @@ void sdram_init() {
 
 	g_RAMSize = lpddr2_size(bc);
 
-	logf("SDRAM Type: %s %s LPDDR2 (BC=0x%X)\n",
-	     lpddr2_manufacturer_name(vendor_id),
+	logf("SDRAM Type: %s LPDDR2 (BC=0x%X, vendor %d)\n",
 	     size_to_string[g_RAMSize],
-	     bc);
+	     bc,
+	     vendor_id);
 
 	if (g_RAMSize == RAM_SIZE_UNKNOWN)
 		panic("unknown ram size (MR8 response was 0x%X)", bc);
