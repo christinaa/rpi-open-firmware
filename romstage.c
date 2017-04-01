@@ -22,24 +22,11 @@ VideoCoreIV first stage bootloader.
 
 uint32_t g_CPUID;
 
-#define UART_DR     (UART_BASE+0x00)
-#define UART_RSRECR (UART_BASE+0x04)
-#define UART_FR     (UART_BASE+0x18)
-#define UART_ILPR   (UART_BASE+0x20)
 #define UART_IBRD   (UART_BASE+0x24)
 #define UART_FBRD   (UART_BASE+0x28)
 #define UART_LCRH   (UART_BASE+0x2C)
 #define UART_CR     (UART_BASE+0x30)
-#define UART_IFLS   (UART_BASE+0x34)
-#define UART_IMSC   (UART_BASE+0x38)
-#define UART_RIS    (UART_BASE+0x3C)
-#define UART_MIS    (UART_BASE+0x40)
 #define UART_ICR    (UART_BASE+0x44)
-#define UART_DMACR  (UART_BASE+0x48)
-#define UART_ITCR   (UART_BASE+0x80)
-#define UART_ITIP   (UART_BASE+0x84)
-#define UART_ITOP   (UART_BASE+0x88)
-#define UART_TDR    (UART_BASE+0x8C)
 
 void uart_putc(unsigned int ch) {
 	while(UART_MSR & 0x20);
@@ -71,39 +58,6 @@ void uart_init(void) {
 	mmio_write32(UART_LCRH, 0x70);
 	mmio_write32(UART_CR, 0x301);
 }
-
-void led_init(void) {
-	unsigned int ra;
-
-	ra = GP_FSEL1;
-	ra &= ~(7 << 18);
-	ra |= 1 << 18;
-
-	GP_FSEL1 = ra;
-}
-
-/*
-  #define CM_PLLC_DIGRST_BITS                                9:9
-  #define CM_PLLC_DIGRST_SET                                 0x00000200
-  #define CM_PLLC_ANARST_BITS                                8:8
-  #define CM_PLLC_ANARST_SET                                 0x00000100
-  #define CM_PLLC_HOLDPER_BITS                               7:7
-  #define CM_PLLC_HOLDPER_SET                                0x00000080
-  #define CM_PLLC_LOADPER_BITS                               6:6
-  #define CM_PLLC_LOADPER_SET                                0x00000040
-  #define CM_PLLC_HOLDCORE2_BITS                             5:5
-  #define CM_PLLC_HOLDCORE2_SET                              0x00000020
-  #define CM_PLLC_LOADCORE2_BITS                             4:4
-  #define CM_PLLC_LOADCORE2_SET                              0x00000010
-  #define CM_PLLC_HOLDCORE1_BITS                             3:3
-  #define CM_PLLC_HOLDCORE1_SET                              0x00000008
-  #define CM_PLLC_LOADCORE1_BITS                             2:2
-  #define CM_PLLC_LOADCORE1_SET                              0x00000004
-  #define CM_PLLC_HOLDCORE0_BITS                             1:1
-  #define CM_PLLC_HOLDCORE0_SET                              0x00000002
-  #define CM_PLLC_LOADCORE0_BITS                             0:0
-  #define CM_PLLC_LOADCORE0_SET                              0x00000001
-*/
 
 void switch_vpu_to_pllc() {
 	A2W_XOSC_CTRL |= A2W_PASSWORD | A2W_XOSC_CTRL_PLLCEN_SET;
@@ -164,18 +118,12 @@ void set_interrupt(int intno, bool enable) {
 
     uint32_t v = mmio_read32(IC0_BASE + offset) & ~slot;
     mmio_write32(IC0_BASE + offset, enable ? v | slot : v);
-
-    printf("%d: %X\n", intno, mmio_read32(IC0_BASE + offset));
 }
 
 extern void sdram_init();
 extern void arm_init();
 extern void monitor_start();
 extern void PEStartPlatform();
-
-void print_crap() {
-	printf("TB_BOOT_OPT = 0x%X\n", TB_BOOT_OPT);
-}
 
 int _main(unsigned int cpuid, unsigned int load_address) {
 	switch_vpu_to_pllc();
@@ -201,11 +149,6 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	    "OPENSOURCE"
 	);
 
-	printf("CPUID    = 0x%X\n", cpuid);
-	printf("LoadAddr = 0x%X\n", load_address);
-
-	print_crap();
-
 	g_CPUID = cpuid;
 
 	__cxx_init();
@@ -221,4 +164,3 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 
 	panic("main exiting!");
 }
-
