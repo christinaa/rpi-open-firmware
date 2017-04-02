@@ -75,6 +75,7 @@ struct LoaderImpl {
 		/* read device tree blob */
 		uint8_t* fdt = reinterpret_cast<uint8_t*>(DTB_LOAD_ADDRESS);
 		size_t sz = read_file(filename, fdt, false);
+		logf("FDT loaded at %X\n", (unsigned int) fdt);
 
 		void* v_fdt = reinterpret_cast<void*>(fdt);
 
@@ -93,13 +94,19 @@ struct LoaderImpl {
 
 		res = fdt_setprop(v_fdt, node, "bootargs", cmdline, strlen((char*) cmdline) + 1);
 
-		/* pass in a memory map (TODO: don't assume 256MB) */
+		/* pass in a memory map, skipping first meg for bootcode */
 		int memory = fdt_path_offset(v_fdt, "/memory");
 		if(memory < 0)
 			panic("no memory node in fdt");
 
+		/* start the memory map at 1M/16 and grow continuous for 256M
+		 * TODO: does this disrupt I/O? */
+
+		char dtype[] = "memory";
 		uint8_t memmap[] = { 0x00, 0x00, 0x01, 0x00, 0x30, 0x00, 0x00, 0x00 };
 		res = fdt_setprop(v_fdt, memory, "reg", (void*) memmap, sizeof(memmap));
+
+		logf("(valid) fdt loaded at 0x%X\n", (unsigned int)fdt);
 
 		return fdt;
 	}
@@ -112,12 +119,17 @@ struct LoaderImpl {
 
 	LoaderImpl() {
 		logf("Mounting boot partitiion ...\n");
-		if(f_mount(&g_BootVolumeFs, ROOT_VOLUME_PREFIX, 1) != FR_OK)
-			panic("failed to mount boot partition");
+		FRESULT r = f_mount(&g_BootVolumeFs, ROOT_VOLUME_PREFIX, 1);
+		if (r != FR_OK) {
+			panic("failed to mount boot partition, error: %d", (int)r);
+		}
+		logf("Boot partition mounted!\n");
 
-		/* read the command-line */
+		/* read the command-line null-terminated */
 		uint8_t* cmdline;
-		read_file("cmdline.txt", cmdline);
+		size_t cmdlen = read_file("cmdline.txt", cmdline);
+
+		logf("kernel cmdline: %s\n", cmdline);
 
 		/* load flat device tree */
 		uint8_t* fdt = load_fdt("rpi.dtb", cmdline);
@@ -130,8 +142,10 @@ struct LoaderImpl {
 		linux_t kernel = reinterpret_cast<linux_t>(zImage);
 
 		size_t ksize = read_file("zImage", zImage, false);
+		logf("zImage loaded at 0x%X\n", (unsigned int)kernel);
 
 		/* flush the cache */
+		logf("Flushing....\n")
 		for (uint8_t* i = zImage; i < zImage + ksize; i += 32) {
 			__asm__ __volatile__ ("mcr p15,0,%0,c7,c10,1" : : "r" (i) : "memory");
 		}
@@ -140,7 +154,7 @@ struct LoaderImpl {
 		teardown_hardware();
 
 		/* fire away -- this should never return */
-		logf("Jumping to the kernel...\n");
+		logf("Jumping to the Linux kernel...\n");
 		kernel(0, ~0, fdt);
 	}
 };

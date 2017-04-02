@@ -37,6 +37,12 @@ struct MbrPartition {
 	uint8_t		part_ehd;		/* end head */
 	uint8_t		part_esect;		/* end sector */
 	uint8_t		part_ecyl;		/* end cylinder */
+#if 0
+	uint16_t	part_start_lo;		/* absolute starting ... */
+	uint16_t	part_start_hi;		/* ... sector number */
+	uint16_t	part_size_lo;		/* partition size ... */
+	uint16_t	part_size_hi;		/* ... in sectors */
+#endif
 	uint32_t part_start;
 	uint32_t part_size;
 } __attribute__((packed));
@@ -49,12 +55,33 @@ struct Mbr {
 	uint16_t	 mbr_sig;
 } __attribute__((packed));
 
+static_assert(sizeof(Mbr) >= 512, "What the fuck");
+
 #define MBR_FAT16 0x04
 #define MBR_FAT32 0x0B
 #define MBR_FAT32_INT13 0x0C
 #define MBR_FAT16_INT13 0x0E
 #define MBR_LINUX 0x83
 #define MBR_NTFS 0x07
+
+static const char* mbr_fs_to_string(int fs) {
+	switch (fs) {
+	case MBR_FAT32:
+		return "FAT32";
+	case MBR_FAT32_INT13:
+		return "FAT32-INT13";
+	case MBR_FAT16_INT13:
+		return "FAT16-INT13";
+	case MBR_FAT16:
+		return "FAT16";
+	case MBR_LINUX:
+		return "Linux (ext2/ext3)";
+	case MBR_NTFS:
+		return "NTFS";
+	default:
+		return "<Unknown>";
+	}
+}
 
 struct MbrImpl {
 	Mbr* mbr;
@@ -94,19 +121,28 @@ struct MbrImpl {
 	void read_mbr() {
 		logf("Reading master boot record ...\n");
 
-		if (!mmc->read_block(0, mbr))
+		if (!mmc->read_block(0, mbr)) {
 			panic("unable to read master boot record from the SD card");
+		}
 
-		if (!validate_signature())
+		if (!validate_signature()) {
 			panic("invalid master boot record signature (got 0x%x)", mbr->mbr_sig);
+		}
+
+		logf("MBR contents:\n");
+
+		for (int i = 0; i < 4; i++) {
+			MbrPartition& p = mbr->mbr_part[i];
+			printf("    %d: %s at:%d size:%d\n", i, mbr_fs_to_string(p.part_typ), p.part_start, p.part_size);
+		}
 	}
 
 	MbrImpl() {
 		mbr = new Mbr;
 		mmc = get_sdhost_device();
-		if (!mmc)
+		if (!mmc) {
 			panic("parent block device not initilalized!");
-
+		}
 		read_mbr();
 		logf("Disk ready!\n");
 	}

@@ -134,21 +134,24 @@ struct BCM2708SDHost : BlockDevice {
 	}
 
 	void configure_pinmux() {
-		logf("configuring pinmux ...\n");
-
 		GP_FSEL4 = 0x24000000;
 		GP_FSEL5 = 0x924;
+
+		logf("waiting for pinmux pull update ...\n");
 
 		GP_PUD = 2;
 		mfence();
 		udelay(500);
 		GP_PUD = 0;
 
-		/* are these in bank 1 or 2? */
+		logf("waiting for pinmux clock update ...\n");
+
+		/* are these in bank 1 or 2? ah who gives a fuck ... */
 		GP_PUDCLK1 = GP_PUDCLK1_PUDCLKn32_SET;
 		GP_PUDCLK2 = GP_PUDCLK2_PUDCLKn64_SET;
 		udelay(500);
 
+		logf("ok ...\n");
 		GP_PUDCLK1 = 0;
 		GP_PUDCLK2 = 0;
 
@@ -197,6 +200,8 @@ struct BCM2708SDHost : BlockDevice {
 
 		get_response();
 
+		//printf("Cmd: 0x%x Resp: %08x %08x %08x %08x\n", current_cmd, r[0], r[1], r[2], r[3]);
+
 		if (SH_CMD & SH_CMD_FAIL_FLAG_SET) {
 			if (SH_HSTS & SDHSTS_ERROR_MASK) {
 				logf("ERROR: sdhost status: 0x%x\n", SH_HSTS);
@@ -241,6 +246,11 @@ struct BCM2708SDHost : BlockDevice {
 
 		logf("SD card has arrived!\n", r);
 
+		is_high_capacity = (r[0] & MMC_OCR_HCS) == MMC_OCR_HCS;
+
+		if (is_high_capacity)
+			logf("This is an SDHC card!\n");
+
 		return true;
 
 	}
@@ -265,6 +275,8 @@ struct BCM2708SDHost : BlockDevice {
 			return false;
 		rca = SD_R6_RCA(r);
 
+		logf("RCA = 0x%x\n", rca);
+
 		send_136_resp(MMC_SEND_CID, MMC_ARG_RCA(rca));
 		if (!wait_and_get_response())
 			return false;
@@ -281,13 +293,15 @@ struct BCM2708SDHost : BlockDevice {
 		return true;
 	}
 
+//#define DUMP_READ
+
 	bool wait_for_fifo_data(uint32_t timeout = 100000) {
 		uint32_t t = timeout;
 
 		while ((SH_HSTS & SH_HSTS_DATA_FLAG_SET) == 0) {
 			if (t == 0) {
 				putchar('\n');
-				logf("ERROR: no FIFO data, timed out after %dus!\n", timeout);
+				logf("ERROR: no FIFO data, timed out after %dus!\n", timeout)
 				return false;
 			}
 			t--;
@@ -298,6 +312,8 @@ struct BCM2708SDHost : BlockDevice {
 	}
 
 	void drain_fifo() {
+		/* fuck me with a rake ... gently */
+
 		wait();
 
 		while (SH_HSTS & SH_HSTS_DATA_FLAG_SET) {
@@ -345,8 +361,9 @@ struct BCM2708SDHost : BlockDevice {
 		/* drain useful data from FIFO */
 		for (i = 0; i < 128; i++) {
 			/* wait for FIFO */
-			if (!wait_for_fifo_data())
+			if (!wait_for_fifo_data()) {
 				break;
+			}
 
 			uint32_t hsts_err = SH_HSTS & SDHSTS_ERROR_MASK;
 			if (hsts_err) {
@@ -388,7 +405,10 @@ struct BCM2708SDHost : BlockDevice {
 	bool select_card() {
 		send(MMC_SELECT_CARD, MMC_ARG_RCA(rca));
 
-		return wait();
+		if (!wait())
+			return false;
+
+		return true;
 	}
 
 	bool init_card() {
@@ -480,6 +500,12 @@ struct BCM2708SDHost : BlockDevice {
 	void restart_controller() {
 		is_sdhc = false;
 
+		logf("hcfg 0x%X, cdiv 0x%X, edm 0x%X, hsts 0x%X\n",
+		     SH_HCFG,
+		     SH_CDIV,
+		     SH_EDM,
+		     SH_HSTS);
+
 		logf("Restarting the eMMC controller ...\n");
 
 		configure_pinmux();
@@ -495,10 +521,14 @@ struct BCM2708SDHost : BlockDevice {
 		if (init_card()) {
 			card_ready = true;
 
-			/* work around quirk / silicon bug */
-			for (int i = 0; i < 3; i++)
-				if (!read_block(0, nullptr))
+			/*
+			 * looks like a silicon bug to me or a quirk of csd2, who knows
+			 */
+			for (int i = 0; i < 3; i++) {
+				if (!read_block(0, nullptr)) {
 					panic("fifo flush cycle %d failed", i);
+				}
+			}
 		} else {
 			panic("failed to reinitialize the eMMC controller");
 		}
