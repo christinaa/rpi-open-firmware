@@ -146,7 +146,7 @@ int _main(unsigned int cpuid, unsigned int load_address) {
 	    "Booting Raspberry Pi....\n"
 	    "Copyright 2016-2017 rpi-open-firmware authors \n"
 	    "BUILDATE  : %s %s \n",
-	    __DATE__, __TIME__,
+	    __DATE__, __TIME__
 	);
 
 	g_CPUID = cpuid;

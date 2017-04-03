@@ -17,6 +17,7 @@ Second stage bootloader.
 
 =============================================================================*/
 
+#include <string.h>
 #include <drivers/fatfs/ff.h>
 #include <chainloader.h>
 #include <drivers/mailbox.hpp>
