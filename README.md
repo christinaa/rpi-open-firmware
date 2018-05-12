@@ -10,7 +10,7 @@ All Broadcom headers are licensed under 3-Clause BSD License while our code is u
 
 ## Is this project dead or abandoned?
 
-It's not dead and not abandandoned in a conventional sense. 
+It's not dead and not abandoned in a conventional sense. 
 
 However, it is on an indefinite hold. I wrote a detailed explanation (in issue #37)(https://github.com/christinaa/rpi-open-firmware/issues/37) of its current situation. 
 
