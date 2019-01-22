@@ -16,7 +16,7 @@ However, it is on an indefinite hold. I wrote a detailed explanation [in issue #
 
 ## Building
 
-As a prerequisite, Julian Brown's [VC4 toolchain](https://github.com/puppeh/vc4-toolchain) is necessary as well as the `arm-none-eabi-` toolchain (Debian package `gcc-arm-none-eabi`). You can tweak the VC4 toolchain path in `CROSS_COMPILE` in `Makefile` and the ARM path in `arm_chainloader/Makefile` if necessary. Contributors should not commit their personal paths. After configuration, run `buildall.sh`. The binary is at `build/bootcode.bin`, ready to be copied to an SD card.
+As a prerequisite, Julian Brown's [VC4 toolchain](https://github.com/itszor/vc4-toolchain) is necessary as well as the `arm-none-eabi-` toolchain (Debian package `gcc-arm-none-eabi`). You can tweak the VC4 toolchain path in `CROSS_COMPILE` in `Makefile` and the ARM path in `arm_chainloader/Makefile` if necessary. Contributors should not commit their personal paths. After configuration, run `buildall.sh`. The binary is at `build/bootcode.bin`, ready to be copied to an SD card.
 
 ### Building on macOS
 
@@ -33,7 +33,7 @@ Yes, with some conditions. You can boot a very minimal version of Linux without 
 
 ## Thanks To
  * **[Herman Hermitage](https://github.com/hermanhermitage)** for his VC4 documentation and for helping determine suitable ARM PLL configurations.
- * **[Julian Brown](https://github.com/puppeh)** for reviewing the code and for his awesome VC4 toolchain.
+ * **[Julian Brown](https://github.com/itszor)** for reviewing the code and for his awesome VC4 toolchain.
  * **[Alyssa Rosenzweig](https://github.com/bobbybee)** for her contributions to the firmware especially in areas of Linux bringup and early ARM side initialization, as well as fixing mailbox support.
  * **[David Given](https://github.com/davidgiven)** for his initial LLVM project used as the base for the initial LLVM toolchain before moving to GCC.
  * **[Scott Mansell](https://github.com/phire)** for reviewing the code.
