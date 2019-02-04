@@ -46,7 +46,7 @@ default: $(TARGET_ARM_CHAINLOADER)
 
 OBJ := $(addprefix $(TARGET_BUILD_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
-CROSS_COMPILE = arm-none-eabi-
+CROSS_COMPILE ?= arm-none-eabi-
 CC = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)gcc
 AS = $(CC)

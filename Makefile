@@ -42,7 +42,7 @@ default: $(TARGET_BOOTCODE)
 OBJ := $(addprefix $(TARGET_BUILD_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 
 # the cross compiler should already be in your path
-CROSS_COMPILE = vc4-elf-
+CROSS_COMPILE ?= vc4-elf-
 CC = $(CROSS_COMPILE)gcc
 CXX = $(CROSS_COMPILE)g++
 AS = $(CC)
