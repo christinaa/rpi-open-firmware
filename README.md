@@ -1,5 +1,7 @@
 # Minimal Raspberry Pi VPU firmware
 
+**While this personal project is on hold, development continues under [librepi/rpi-open-firmware](https://github.com/librerpi/rpi-open-firmware).**
+
 `rpi-open-firmware` is a small firmware for the [RPi VPU](https://en.wikipedia.org/wiki/VideoCore), capable of initializing UART, VPU PLL (PLLC), and ARM itself. It's intended as a libre replacement for the stock `bootcode.bin` normally loaded from the SD card. A UART cable is highly recommended for the time being, though not strictly necessary. Additionally, there is a second-stage chainloader running on ARM capable of initializing eMMC, FAT, and the Linux kernel.
 
 See [issue #31](https://github.com/christinaa/rpi-open-firmware/issues/31) for a compatibility table and related discourse.
